@@ -683,9 +683,6 @@ fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &
             query.push(" AND is_software_engineering = TRUE");
         } else {
             query.push(" AND role_category = ").push_bind(category);
-            if category == "other" {
-                query.push(" AND is_software_engineering = FALSE");
-            }
         }
     }
     if let Some(country) = filters.country.as_deref().filter(|v| !v.is_empty()) {
@@ -1159,12 +1156,30 @@ mod tests {
             .execute(&db)
             .await
             .unwrap();
+        sqlx::query("INSERT INTO job_postings (source, source_job_id, title, company, location, url) VALUES ('test', 'design', 'Design Intern', 'Example', 'India', 'https://example.com')")
+            .execute(&db).await.unwrap();
+        let pre_update_interns = ListingQuery {
+            role_category: Some("intern".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &pre_update_interns).await, 2);
+        sqlx::raw_sql(include_str!(
+            "../migrations/0006_software_intern_categories.sql"
+        ))
+        .execute(&db)
+        .await
+        .unwrap();
         let filters = ListingQuery {
             role_category: Some("intern".into()),
             country: Some("IN".into()),
             ..empty_filters()
         };
         assert_eq!(matching_count(&db, &filters).await, 1);
+        let others = ListingQuery {
+            role_category: Some("other".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &others).await, 1);
         sqlx::query("UPDATE job_postings SET title = 'Software Engineer II', location = 'United States' WHERE source_job_id = 'old'")
             .execute(&db).await.unwrap();
         assert_eq!(matching_count(&db, &filters).await, 0);
@@ -1187,7 +1202,7 @@ mod tests {
                 "intern",
                 vec!["IN"],
             ),
-            ("Summer Internship", None, "US", "intern", vec!["US"]),
+            ("Summer Internship", None, "US", "other", vec!["US"]),
             (
                 "Software Engineer",
                 Some("Internship"),
@@ -1283,17 +1298,8 @@ mod tests {
             for country in [None, Some("US"), Some("IN")] {
                 let expected = fixtures
                     .iter()
-                    .filter(|(title, _, _, category, countries)| {
-                        *category == role
-                            && (role != "other"
-                                || [
-                                    "Internal Auditor",
-                                    "International Sales",
-                                    "Internet Engineer",
-                                    "Junior Accountant",
-                                ]
-                                .contains(title))
-                            && country.is_none_or(|c| countries.contains(&c))
+                    .filter(|(_, _, _, category, countries)| {
+                        *category == role && country.is_none_or(|c| countries.contains(&c))
                     })
                     .count() as i64;
                 let filters = ListingQuery {
@@ -1328,11 +1334,11 @@ mod tests {
             role_category: Some("intern".into()),
             ..empty_filters()
         };
-        assert_eq!(matching_count(&db, &filters).await, 2);
+        assert_eq!(matching_count(&db, &filters).await, 1);
     }
 
     #[tokio::test]
-    async fn software_engineering_filter_spans_levels_and_other_excludes_it() {
+    async fn software_engineering_filter_spans_levels_and_other_catches_remaining_jobs() {
         let db = crate::test_database().await;
         let software_titles = [
             "Software Engineer Intern",
@@ -1384,12 +1390,16 @@ mod tests {
             role_category: Some("other".into()),
             ..empty_filters()
         };
-        assert_eq!(matching_count(&db, &other).await, other_titles.len() as i64);
+        // Others also includes senior/unspecified software roles and non-software interns.
+        assert_eq!(
+            matching_count(&db, &other).await,
+            other_titles.len() as i64 + 13
+        );
         let interns = ListingQuery {
             role_category: Some("intern".into()),
             ..empty_filters()
         };
-        assert_eq!(matching_count(&db, &interns).await, 2);
+        assert_eq!(matching_count(&db, &interns).await, 1);
         sqlx::query(
             "UPDATE job_postings SET title = 'Backend Engineer' WHERE title = 'Accountant'",
         )
@@ -1402,7 +1412,7 @@ mod tests {
         );
         assert_eq!(
             matching_count(&db, &other).await,
-            other_titles.len() as i64 - 1
+            other_titles.len() as i64 + 13
         );
     }
 

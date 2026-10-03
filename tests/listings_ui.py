@@ -98,10 +98,10 @@ class ListingsUI(unittest.TestCase):
 
     def test_role_and_country_options_send_exact_params(self):
         self.assertEqual(self.page.locator("#role-filter option").all_text_contents(),
-                         ["All roles", "Intern", "SDE-1", "SDE-2", "Software engineering", "Other"])
+                         ["All roles", "Software intern", "SDE-1", "SDE-2", "Others"])
         self.assertEqual(self.page.locator("#location-filter option").all_text_contents(),
                          ["All countries", "USA", "India"])
-        for role in ["intern", "sde-1", "sde-2", "software-engineering", "other", ""]:
+        for role in ["intern", "sde-1", "sde-2", "other", ""]:
             self.select_filter("#role-filter", role)
             for country in ["US", "IN", ""]:
                 self.select_filter("#location-filter", country)
@@ -140,7 +140,7 @@ class ListingsUI(unittest.TestCase):
             self.page.wait_for_function("document.querySelector('#page-status').textContent.includes('Page 1 of 3')")
 
     def test_category_labels_preserve_title_location_and_metadata(self):
-        for index, label in enumerate(["Intern", "SDE-1", "SDE-2", "Other"]):
+        for index, label in enumerate(["Software intern", "SDE-1", "SDE-2", "Others"]):
             row = self.page.locator("#listings-body tr").nth(index)
             self.assertEqual(row.locator(".role-meta").inner_text(), label)
             self.assertEqual(row.locator(".role a").inner_text(), f"Engineer {index}")
@@ -149,12 +149,13 @@ class ListingsUI(unittest.TestCase):
         self.assertIn("explicit title levels", note)
         self.assertIn("junior/mid-level", note)
         self.assertIn("unknown software levels", note)
-        self.assertIn("Other excludes software engineering and internships", note)
+        self.assertIn("software-related internships only", note)
+        self.assertIn("all remaining jobs appear under Others", note)
         self.assertIn("not an eligibility guarantee", note)
 
-    def test_software_job_without_known_level_has_software_label(self):
+    def test_software_job_without_known_level_has_others_label(self):
         row = self.page.locator("#listings-body tr").nth(19)
-        self.assertEqual(row.locator(".role-meta").inner_text(), "Software engineering")
+        self.assertEqual(row.locator(".role-meta").inner_text(), "Others")
 
     def test_shrink_to_zero_shows_empty_result_not_stale_page(self):
         self.page.click("#next-page")
