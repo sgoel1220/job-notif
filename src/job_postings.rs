@@ -25,6 +25,7 @@ pub(crate) struct JobPosting {
     pub(crate) salary_min: Option<f64>,
     pub(crate) salary_max: Option<f64>,
     pub(crate) salary_currency: Option<String>,
+    pub(crate) salary_interval: Option<String>,
     pub(crate) url: String,
     pub(crate) details_json: String,
 }
@@ -58,6 +59,7 @@ impl JobPosting {
             salary_min: None,
             salary_max: None,
             salary_currency: None,
+            salary_interval: None,
             url,
             details_json,
         };
@@ -78,11 +80,13 @@ impl JobPosting {
             ],
         )
         .or(job.posted_at);
-        job.employment_type = first_string(
-            &details_value,
-            &["employmentType", "employment_type", "employmentStatus"],
-        )
-        .or_else(|| nested_string(&details_value, &["categories", "commitment"]));
+        job.employment_type = normalize_employment(
+            first_string(
+                &details_value,
+                &["employmentType", "employment_type", "employmentStatus"],
+            )
+            .or_else(|| nested_string(&details_value, &["categories", "commitment"])),
+        );
         job.department = first_string(&details_value, &["department", "departmentName"])
             .or_else(|| nested_string(&details_value, &["categories", "department"]))
             .or_else(|| named_array_values(&details_value, "departments"));
@@ -103,6 +107,24 @@ impl JobPosting {
             &["salaryCurrency", "salary_currency", "currency"],
         )
         .or_else(|| nested_string(&details_value, &["salaryRange", "currency"]));
+        job.salary_interval = first_string(
+            &details_value,
+            &[
+                "salaryInterval",
+                "salary_interval",
+                "payPeriod",
+                "salaryPeriod",
+            ],
+        )
+        .or_else(|| nested_string(&details_value, &["salaryRange", "interval"]))
+        .as_deref()
+        .and_then(canonical_salary_interval);
+        if let Some((minimum, maximum, currency, interval)) = ashby_salary(&details_value) {
+            job.salary_min = job.salary_min.or(minimum);
+            job.salary_max = job.salary_max.or(maximum);
+            job.salary_currency = job.salary_currency.or(currency);
+            job.salary_interval = job.salary_interval.or(interval);
+        }
         job.description = first_string(
             &details_value,
             &[
@@ -208,21 +230,23 @@ fn merge_locations(location: Option<String>, value: &serde_json::Value) -> Optio
     } else if let Some(primary) = nested_string(value, &["categories", "location"]) {
         all.push(primary);
     }
+    if let Some(primary_address) = value.pointer("/address/postalAddress") {
+        if let Some(text) = location_item_text(primary_address) {
+            all.push(text);
+        }
+    }
     for key in ["locations", "secondaryLocations", "offices"] {
         if let Some(items) = value.get(key).and_then(serde_json::Value::as_array) {
             for item in items {
-                let text = value_to_string(item)
-                    .or_else(|| item.get("name").and_then(value_to_string))
-                    .or_else(|| item.get("location").and_then(value_to_string))
-                    .or_else(|| {
-                        item.pointer("/address/postalAddress")
-                            .and_then(value_to_string)
-                    });
+                let text = location_item_text(item);
                 if let Some(text) = text {
                     all.push(text);
                 }
             }
         }
+    }
+    if let Some(primary) = nested_string(value, &["categories", "location"]) {
+        all.push(primary);
     }
     if let Some(items) = value
         .pointer("/categories/allLocations")
@@ -232,7 +256,217 @@ fn merge_locations(location: Option<String>, value: &serde_json::Value) -> Optio
     }
     let mut seen = std::collections::HashSet::new();
     all.retain(|item| seen.insert(item.to_lowercase()));
+    let complete = all.clone();
+    all.retain(|item| {
+        !complete.iter().any(|other| {
+            !other.eq_ignore_ascii_case(item)
+                && other
+                    .split([',', ';'])
+                    .any(|part| part.trim().eq_ignore_ascii_case(item.trim()))
+        })
+    });
     (!all.is_empty()).then(|| all.join("; "))
+}
+
+fn location_item_text(item: &serde_json::Value) -> Option<String> {
+    if let Some(text) = value_to_string(item) {
+        return Some(text);
+    }
+    let mut parts = Vec::new();
+    'paths: for path in [
+        &["name"][..],
+        &["location"][..],
+        &["addressLocality"][..],
+        &["addressRegion"][..],
+        &["addressCountry"][..],
+        &["address", "postalAddress"][..],
+        &["address", "postalAddress", "addressLocality"][..],
+        &["address", "postalAddress", "addressRegion"][..],
+        &["address", "postalAddress", "addressCountry", "name"][..],
+        &["address", "postalAddress", "addressCountry"][..],
+        &["address", "addressLocality"][..],
+        &["address", "addressRegion"][..],
+        &["address", "addressCountry", "name"][..],
+        &["address", "addressCountry"][..],
+        &["addressCountry", "name"][..],
+        &["addressCountry"][..],
+        &["country"][..],
+        &["city"][..],
+    ] {
+        let mut current = item;
+        for key in path {
+            current = match current.get(*key) {
+                Some(v) => v,
+                None => continue 'paths,
+            };
+        }
+        if let Some(text) = value_to_string(current) {
+            parts.push(text);
+        }
+    }
+    let mut seen = std::collections::HashSet::new();
+    parts.retain(|part| seen.insert(part.to_lowercase()));
+    (!parts.is_empty()).then(|| parts.join(", "))
+}
+
+fn is_india_search(term: &str) -> bool {
+    ["india", "bharat"]
+        .iter()
+        .any(|alias| term.eq_ignore_ascii_case(alias))
+}
+
+fn like_pattern(term: &str) -> String {
+    format!(
+        "%{}%",
+        term.replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_")
+    )
+}
+
+fn location_search_patterns(term: &str) -> Vec<String> {
+    let mut terms = vec![like_pattern(term)];
+    if is_india_search(term) {
+        terms.extend(
+            [
+                "Bengaluru",
+                "Bangalore",
+                "Mumbai",
+                "Delhi",
+                "New Delhi",
+                "Hyderabad",
+                "Pune",
+                "Chennai",
+                "Kolkata",
+                "Noida",
+                "Gurugram",
+                "Gurgaon",
+                "Ahmedabad",
+                "Jaipur",
+            ]
+            .into_iter()
+            .map(like_pattern),
+        );
+    }
+    terms
+}
+
+/// Ashby's public feed exposes structured salary values in the source's stated currency and
+/// interval (for example USD / "1 YEAR"). We preserve the numeric amounts as supplied and do
+/// not annualize, convert currencies, or treat equity/bonus components as salary.
+fn canonical_salary_interval(value: &str) -> Option<String> {
+    let normalized = value.trim().to_ascii_lowercase();
+    let tokens: String = normalized
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .collect();
+    let digits = tokens.chars().take_while(|ch| ch.is_ascii_digit()).count();
+    if digits > 0 && &tokens[..digits] != "1" {
+        return None;
+    }
+    let unit = &tokens[digits..];
+    match unit {
+        "h" | "hr" | "hrs" | "hour" | "hours" | "hourly" | "perhour" => Some("hour".into()),
+        "d" | "day" | "days" | "daily" | "perday" => Some("day".into()),
+        "w" | "wk" | "wks" | "week" | "weeks" | "weekly" | "perweek" => Some("week".into()),
+        "mo" | "mos" | "month" | "months" | "monthly" | "permonth" => Some("month".into()),
+        "y" | "yr" | "yrs" | "year" | "years" | "yearly" | "annual" | "annually" | "peryear" => {
+            Some("year".into())
+        }
+        _ => None,
+    }
+}
+
+fn ashby_salary(
+    value: &serde_json::Value,
+) -> Option<(Option<f64>, Option<f64>, Option<String>, Option<String>)> {
+    let compensation = value.get("compensation")?;
+    let components = compensation
+        .get("summaryComponents")
+        .and_then(serde_json::Value::as_array)
+        .filter(|items| !items.is_empty())
+        .or_else(|| {
+            compensation
+                .pointer("/compensationTiers/0/components")
+                .and_then(serde_json::Value::as_array)
+        })?;
+    let salary = components.iter().find(|item| {
+        item.get("compensationType")
+            .and_then(value_to_string)
+            .is_some_and(|kind| kind.eq_ignore_ascii_case("salary"))
+    })?;
+    let minimum = first_number(salary, &["minValue"]);
+    let maximum = first_number(salary, &["maxValue"]);
+    (minimum.is_some() || maximum.is_some()).then(|| {
+        (
+            minimum,
+            maximum,
+            first_string(salary, &["currencyCode"]),
+            first_string(salary, &["interval"])
+                .as_deref()
+                .and_then(canonical_salary_interval),
+        )
+    })
+}
+
+fn normalize_employment(value: Option<String>) -> Option<String> {
+    let value = value?;
+    let normalized = value.to_ascii_lowercase();
+    let compact: String = normalized
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .collect();
+    let canonical = match compact.as_str() {
+        "fulltime" | "fulltimeemployee" | "fulltimeemployment" => "Full-time",
+        "parttime" | "parttimeemployee" | "parttimeemployment" => "Part-time",
+        "intern" | "internship" => "Internship",
+        "contractor" | "contract" | "fixedterm" | "fixedtermcontract" => "Contract",
+        "permanent" => "Permanent",
+        "temporary" | "temp" => "Temporary",
+        _ => return Some(value),
+    };
+    Some(canonical.to_owned())
+}
+
+fn employment_key(value: &str) -> String {
+    normalize_employment(Some(value.to_owned()))
+        .unwrap_or_default()
+        .to_ascii_lowercase()
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .collect()
+}
+
+fn append_canonical_employment_filter<'a>(query: &mut QueryBuilder<'a, Postgres>, value: &str) {
+    query.push(" AND CASE ");
+    for (canonical, aliases) in [
+        (
+            "fulltime",
+            "'fulltime', 'fulltimeemployee', 'fulltimeemployment'",
+        ),
+        (
+            "parttime",
+            "'parttime', 'parttimeemployee', 'parttimeemployment'",
+        ),
+        ("internship", "'intern', 'internship'"),
+        (
+            "contract",
+            "'contract', 'contractor', 'fixedterm', 'fixedtermcontract'",
+        ),
+        ("permanent", "'permanent'"),
+        ("temporary", "'temporary', 'temp'"),
+    ] {
+        query
+            .push(" WHEN ")
+            .push("regexp_replace(lower(COALESCE(employment_type, '')), '[^a-z0-9]', '', 'g') IN (")
+            .push(aliases)
+            .push(") THEN '")
+            .push(canonical)
+            .push("'");
+    }
+    query
+        .push(" ELSE regexp_replace(lower(COALESCE(employment_type, '')), '[^a-z0-9]', '', 'g') END = ")
+        .push_bind(employment_key(value));
 }
 
 fn normalize_workplace(current: Option<String>, value: &serde_json::Value) -> Option<String> {
@@ -271,6 +505,11 @@ fn first_number(value: &serde_json::Value, keys: &[&str]) -> Option<f64> {
     })
 }
 
+fn location_for_storage(job: &JobPosting) -> Option<String> {
+    let details: serde_json::Value = serde_json::from_str(&job.details_json).ok()?;
+    merge_locations(job.location.clone(), &details)
+}
+
 /// Reconcile one company's complete snapshot for one exact ATS source.
 ///
 /// The exact source equality avoids prefix collisions such as `lever` matching
@@ -303,8 +542,8 @@ pub(crate) async fn replace_source_snapshot(
             "INSERT INTO job_postings (
                 source, source_job_id, title, company, location, workplace_type, employment_type,
                 department, team, description, description_text, posted_at, salary_min, salary_max,
-                salary_currency, url, details_json, is_active
-             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, TRUE)
+                salary_currency, salary_interval, url, details_json, is_active
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, TRUE)
              ON CONFLICT(company, source, source_job_id) DO UPDATE SET
                 title = excluded.title, location = excluded.location,
                 workplace_type = excluded.workplace_type, employment_type = excluded.employment_type,
@@ -312,14 +551,15 @@ pub(crate) async fn replace_source_snapshot(
                 description = excluded.description, description_text = excluded.description_text,
                 posted_at = excluded.posted_at, salary_min = excluded.salary_min,
                 salary_max = excluded.salary_max, salary_currency = excluded.salary_currency,
+                salary_interval = excluded.salary_interval,
                 url = excluded.url, details_json = excluded.details_json,
                 last_seen_at = CURRENT_TIMESTAMP::text, is_active = TRUE"
         )
         .bind(&job.source).bind(&job.source_job_id).bind(&job.title).bind(&job.company)
-        .bind(&job.location).bind(&job.workplace_type).bind(&job.employment_type)
+        .bind(location_for_storage(job)).bind(&job.workplace_type).bind(normalize_employment(job.employment_type.clone()))
         .bind(&job.department).bind(&job.team).bind(&job.description).bind(&job.description_text)
         .bind(&job.posted_at).bind(job.salary_min).bind(job.salary_max).bind(&job.salary_currency)
-        .bind(&job.url).bind(&job.details_json)
+        .bind(job.salary_interval.as_deref().and_then(canonical_salary_interval)).bind(&job.url).bind(&job.details_json)
         .execute(&mut *tx).await.map_err(ApiError::database)?;
     }
     tx.commit().await.map_err(ApiError::database)
@@ -342,8 +582,8 @@ pub(crate) async fn replace_source_prefix_snapshot(
             "INSERT INTO job_postings (
                 source, source_job_id, title, company, location, workplace_type, employment_type,
                 department, team, description, description_text, posted_at, salary_min, salary_max,
-                salary_currency, url, details_json, is_active
-             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, TRUE)
+                salary_currency, salary_interval, url, details_json, is_active
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, TRUE)
              ON CONFLICT(company, source, source_job_id) DO UPDATE SET
                 title = excluded.title, location = excluded.location,
                 workplace_type = excluded.workplace_type, employment_type = excluded.employment_type,
@@ -351,6 +591,7 @@ pub(crate) async fn replace_source_prefix_snapshot(
                 description = excluded.description, description_text = excluded.description_text,
                 posted_at = excluded.posted_at, salary_min = excluded.salary_min,
                 salary_max = excluded.salary_max, salary_currency = excluded.salary_currency,
+                salary_interval = excluded.salary_interval,
                 url = excluded.url, details_json = excluded.details_json,
                 last_seen_at = CURRENT_TIMESTAMP::text, is_active = TRUE",
         )
@@ -358,9 +599,9 @@ pub(crate) async fn replace_source_prefix_snapshot(
         .bind(&job.source_job_id)
         .bind(&job.title)
         .bind(&job.company)
-        .bind(&job.location)
+        .bind(location_for_storage(job))
         .bind(&job.workplace_type)
-        .bind(&job.employment_type)
+        .bind(normalize_employment(job.employment_type.clone()))
         .bind(&job.department)
         .bind(&job.team)
         .bind(&job.description)
@@ -369,6 +610,7 @@ pub(crate) async fn replace_source_prefix_snapshot(
         .bind(job.salary_min)
         .bind(job.salary_max)
         .bind(&job.salary_currency)
+        .bind(job.salary_interval.as_deref().and_then(canonical_salary_interval))
         .bind(&job.url)
         .bind(&job.details_json)
         .execute(&mut *tx)
@@ -394,17 +636,20 @@ pub(crate) struct StoredJobPosting {
     pub(crate) salary_min: Option<f64>,
     pub(crate) salary_max: Option<f64>,
     pub(crate) salary_currency: Option<String>,
+    pub(crate) salary_interval: Option<String>,
     pub(crate) url: String,
     pub(crate) is_active: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 pub(crate) struct ListingQuery {
     page: Option<u64>,
     page_size: Option<u64>,
     role: Option<String>,
     location: Option<String>,
     workplace: Option<String>,
+    include_global: Option<bool>,
+    include_unknown_workplace: Option<bool>,
     employment: Option<String>,
     department: Option<String>,
     posted_after: Option<String>,
@@ -412,6 +657,7 @@ pub(crate) struct ListingQuery {
     salary_min: Option<f64>,
     salary_max: Option<f64>,
     currency: Option<String>,
+    salary_interval: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -422,8 +668,8 @@ pub(crate) struct ListingPage {
     page_size: u64,
 }
 
-const DEFAULT_PAGE_SIZE: u64 = 25;
-const MAX_PAGE_SIZE: u64 = 100;
+pub(crate) const DEFAULT_PAGE_SIZE: u64 = 25;
+pub(crate) const MAX_PAGE_SIZE: u64 = 100;
 
 fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &'a ListingQuery) {
     query.push(" WHERE is_active = TRUE");
@@ -432,48 +678,88 @@ fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &
         .as_deref()
         .filter(|value| !value.trim().is_empty())
     {
-        let pattern = format!("%{}%", value.trim());
-        query.push(" AND title ILIKE ").push_bind(pattern);
+        // Normalize the multi-word alias before tokenizing so "front end" stays one concept.
+        let normalized_role = value
+            .to_ascii_lowercase()
+            .replace("front-end", "frontend")
+            .replace("front end", "frontend");
+        for token in normalized_role.split_whitespace() {
+            let normalized = token.trim_matches(|ch: char| {
+                !ch.is_alphanumeric() && !['-', '%', '_', '\\'].contains(&ch)
+            });
+            if normalized.is_empty() {
+                continue;
+            }
+            if normalized == "frontend" {
+                query.push(" AND (title ILIKE '%frontend%' OR title ILIKE '%front-end%' OR title ILIKE '%front end%')");
+            } else {
+                query
+                    .push(" AND title ILIKE ")
+                    .push_bind(like_pattern(normalized))
+                    .push(" ESCAPE E'\\\\'");
+            }
+        }
     }
     if let Some(value) = filters
         .location
         .as_deref()
         .filter(|value| !value.trim().is_empty())
     {
-        query
-            .push(" AND COALESCE(location, '') ILIKE ")
-            .push_bind(format!("%{}%", value.trim()));
+        let term = value.trim();
+        let patterns = location_search_patterns(term);
+        query.push(" AND (");
+        for (index, pattern) in patterns.iter().enumerate() {
+            if index > 0 {
+                query.push(" OR ");
+            }
+            query
+                .push("COALESCE(location, '') ILIKE ")
+                .push_bind(pattern.clone())
+                .push(" ESCAPE E'\\\\'");
+        }
+        if filters.include_global.unwrap_or(false) {
+            query.push(" OR EXISTS (SELECT 1 FROM unnest(string_to_array(COALESCE(location, ''), ';')) AS location_part(value) WHERE LOWER(BTRIM(location_part.value)) IN ('remote', 'worldwide', 'anywhere', 'global'))");
+        }
+        query.push(")");
     }
     if let Some(value) = filters
         .workplace
         .as_deref()
         .filter(|value| !value.trim().is_empty())
     {
-        query
-            .push(" AND COALESCE(workplace_type, '') ILIKE ")
-            .push_bind(format!("%{}%", value.trim()));
+        if value.eq_ignore_ascii_case("unknown") {
+            query.push(" AND (workplace_type IS NULL OR BTRIM(workplace_type) = '')");
+        } else if filters.include_unknown_workplace.unwrap_or(false) {
+            query
+                .push(" AND (COALESCE(workplace_type, '') ILIKE ")
+                .push_bind(like_pattern(value.trim()))
+                .push(" ESCAPE E'\\\\' OR workplace_type IS NULL OR BTRIM(workplace_type) = '')");
+        } else {
+            query
+                .push(" AND COALESCE(workplace_type, '') ILIKE ")
+                .push_bind(like_pattern(value.trim()))
+                .push(" ESCAPE E'\\\\'");
+        }
     }
     if let Some(value) = filters
         .employment
         .as_deref()
         .filter(|value| !value.trim().is_empty())
     {
-        query
-            .push(" AND COALESCE(employment_type, '') ILIKE ")
-            .push_bind(format!("%{}%", value.trim()));
+        append_canonical_employment_filter(query, value.trim());
     }
     if let Some(value) = filters
         .department
         .as_deref()
         .filter(|value| !value.trim().is_empty())
     {
-        let pattern = format!("%{}%", value.trim());
+        let pattern = like_pattern(value.trim());
         query
             .push(" AND (COALESCE(department, '') ILIKE ")
             .push_bind(pattern.clone())
-            .push(" OR COALESCE(team, '') ILIKE ")
+            .push(" ESCAPE E'\\\\' OR COALESCE(team, '') ILIKE ")
             .push_bind(pattern)
-            .push(")");
+            .push(" ESCAPE E'\\\\')");
     }
     if let Some(value) = filters
         .posted_after
@@ -493,6 +779,23 @@ fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &
             .push(" AND LEFT(posted_at, 10) <= ")
             .push_bind(value.to_owned());
     }
+    if filters.salary_min.is_some() || filters.salary_max.is_some() {
+        if let (Some(currency), Some(interval)) = (
+            filters.currency.as_deref(),
+            filters.salary_interval.as_deref(),
+        ) {
+            query
+                .push(" AND LOWER(BTRIM(COALESCE(salary_currency, ''))) = ")
+                .push_bind(currency.trim().to_ascii_lowercase());
+            query
+                .push(" AND salary_interval = ")
+                .push_bind(canonical_salary_interval(interval).unwrap_or_default());
+        }
+    } else if let Some(interval) = filters.salary_interval.as_deref() {
+        query
+            .push(" AND salary_interval = ")
+            .push_bind(canonical_salary_interval(interval).unwrap_or_default());
+    }
     if let Some(value) = filters.salary_min {
         query
             .push(" AND COALESCE(salary_max, salary_min) >= ")
@@ -508,16 +811,59 @@ fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &
         .as_deref()
         .filter(|value| !value.trim().is_empty())
     {
-        query
-            .push(" AND COALESCE(salary_currency, '') ILIKE ")
-            .push_bind(format!("%{}%", value.trim()));
+        if filters.salary_min.is_some() || filters.salary_max.is_some() {
+            // Numeric filters use the exact requested currency above.
+        } else {
+            query
+                .push(" AND COALESCE(salary_currency, '') ILIKE ")
+                .push_bind(like_pattern(value.trim()))
+                .push(" ESCAPE E'\\\\'");
+        }
     }
+}
+
+fn validate_salary_filters(filters: &ListingQuery) -> Result<(), ApiError> {
+    let has_numeric = filters.salary_min.is_some() || filters.salary_max.is_some();
+    let currency = filters
+        .currency
+        .as_deref()
+        .filter(|value| !value.trim().is_empty());
+    let interval = filters
+        .salary_interval
+        .as_deref()
+        .filter(|value| !value.trim().is_empty());
+    if has_numeric && (currency.is_none() || interval.is_none()) {
+        return Err(ApiError::bad_request(
+            "Numeric salary filters require both currency and salary_interval.",
+        ));
+    }
+    if has_numeric && currency.is_some_and(|value| value.chars().any(char::is_whitespace)) {
+        return Err(ApiError::bad_request(
+            "Currency must be a single currency code.",
+        ));
+    }
+    if let Some(interval) = interval {
+        if canonical_salary_interval(interval).is_none() {
+            return Err(ApiError::bad_request(
+                "Unsupported salary_interval; use hour, day, week, month, or year.",
+            ));
+        }
+    }
+    if filters.salary_min.is_some_and(|value| !value.is_finite())
+        || filters.salary_max.is_some_and(|value| !value.is_finite())
+    {
+        return Err(ApiError::bad_request(
+            "Salary bounds must be finite numbers.",
+        ));
+    }
+    Ok(())
 }
 
 pub(crate) async fn list(
     State(state): State<AppState>,
     Query(filters): Query<ListingQuery>,
 ) -> Result<Json<ListingPage>, ApiError> {
+    validate_salary_filters(&filters)?;
     let page = filters.page.unwrap_or(1).max(1);
     let page_size = filters
         .page_size
@@ -537,7 +883,7 @@ pub(crate) async fn list(
         "SELECT id, title, company, location, workplace_type, employment_type,
          department, team, LEFT(description, 2000) AS description,
          LEFT(description_text, 2000) AS description_text, posted_at, salary_min,
-         salary_max, salary_currency, url, is_active FROM job_postings",
+         salary_max, salary_currency, salary_interval, url, is_active FROM job_postings",
     );
     append_listing_filters(&mut rows_query, &filters);
     rows_query
@@ -564,6 +910,39 @@ mod tests {
     use super::*;
     use sqlx::Execute;
 
+    fn empty_filters() -> ListingQuery {
+        ListingQuery {
+            page: None,
+            page_size: None,
+            role: None,
+            location: None,
+            workplace: None,
+            include_global: None,
+            include_unknown_workplace: None,
+            employment: None,
+            department: None,
+            posted_after: None,
+            posted_before: None,
+            salary_min: None,
+            salary_max: None,
+            currency: None,
+            salary_interval: None,
+        }
+    }
+
+    async fn matching_count(db: &PgPool, filters: &ListingQuery) -> i64 {
+        let mut debug_query = QueryBuilder::<Postgres>::new("SELECT COUNT(*) FROM job_postings");
+        append_listing_filters(&mut debug_query, filters);
+        let sql = debug_query.build().sql().to_owned();
+        let mut query = QueryBuilder::<Postgres>::new("SELECT COUNT(*) FROM job_postings");
+        append_listing_filters(&mut query, filters);
+        query
+            .build_query_scalar::<i64>()
+            .fetch_one(db)
+            .await
+            .unwrap_or_else(|error| panic!("{error}; SQL: {sql}"))
+    }
+
     #[test]
     fn role_filter_searches_role_metadata_not_description_or_company() {
         let filters = ListingQuery {
@@ -572,6 +951,8 @@ mod tests {
             role: Some("intern".into()),
             location: None,
             workplace: None,
+            include_global: None,
+            include_unknown_workplace: None,
             employment: None,
             department: None,
             posted_after: None,
@@ -579,6 +960,7 @@ mod tests {
             salary_min: None,
             salary_max: None,
             currency: None,
+            salary_interval: None,
         };
         let mut query = QueryBuilder::<Postgres>::new("SELECT * FROM job_postings");
         append_listing_filters(&mut query, &filters);
@@ -588,6 +970,376 @@ mod tests {
         assert!(!sql.contains("team"));
         assert!(!sql.contains("description"));
         assert!(!sql.contains("company ILIKE"));
+    }
+
+    #[test]
+    fn role_search_uses_all_title_tokens_and_frontend_aliases_only() {
+        let filters = ListingQuery {
+            page: None,
+            page_size: None,
+            role: Some("software engineer".into()),
+            location: None,
+            workplace: None,
+            include_global: None,
+            include_unknown_workplace: None,
+            employment: None,
+            department: None,
+            posted_after: None,
+            posted_before: None,
+            salary_min: None,
+            salary_max: None,
+            currency: None,
+            salary_interval: None,
+        };
+        let mut query = QueryBuilder::<Postgres>::new("SELECT * FROM job_postings");
+        append_listing_filters(&mut query, &filters);
+        let sql = query.build().sql().to_owned();
+        assert_eq!(sql.matches("title ILIKE").count(), 2);
+        assert!(!sql.contains("company ILIKE") && !sql.contains("description ILIKE"));
+
+        let filters = ListingQuery {
+            role: Some("front-end".into()),
+            ..filters.clone()
+        };
+        let mut query = QueryBuilder::<Postgres>::new("SELECT * FROM job_postings");
+        append_listing_filters(&mut query, &filters);
+        let sql = query.build().sql().to_owned();
+        assert_eq!(sql.matches("title ILIKE").count(), 3);
+        assert!(sql.contains("OR title ILIKE"));
+    }
+
+    #[test]
+    fn india_aliases_and_inclusive_filters_are_opt_in() {
+        let filters = ListingQuery {
+            page: None,
+            page_size: None,
+            role: None,
+            location: Some("India".into()),
+            workplace: Some("remote".into()),
+            include_global: Some(true),
+            include_unknown_workplace: Some(true),
+            employment: None,
+            department: None,
+            posted_after: None,
+            posted_before: None,
+            salary_min: None,
+            salary_max: None,
+            currency: None,
+            salary_interval: None,
+        };
+        let mut query = QueryBuilder::<Postgres>::new("SELECT * FROM job_postings");
+        append_listing_filters(&mut query, &filters);
+        let sql = query.build().sql().to_owned();
+        assert!(sql.contains("worldwide") && sql.contains("anywhere"));
+        let aliases = location_search_patterns("India");
+        assert!(
+            aliases.contains(&"%Bengaluru%".to_owned())
+                && aliases.contains(&"%Bangalore%".to_owned())
+        );
+        assert!(sql.matches("COALESCE(location, '') ILIKE").count() >= aliases.len());
+        assert!(sql.contains("workplace_type IS NULL"));
+
+        let strict = ListingQuery {
+            include_global: None,
+            include_unknown_workplace: None,
+            ..filters
+        };
+        let mut query = QueryBuilder::<Postgres>::new("SELECT * FROM job_postings");
+        append_listing_filters(&mut query, &strict);
+        let sql = query.build().sql().to_owned();
+        assert!(!sql.contains("worldwide") && !sql.contains("workplace_type IS NULL"));
+    }
+
+    #[test]
+    fn salary_filters_require_explicit_currency_and_supported_interval() {
+        let mut query = empty_filters();
+        query.salary_min = Some(100.0);
+        assert!(validate_salary_filters(&query).is_err());
+        query.currency = Some("USD".into());
+        assert!(validate_salary_filters(&query).is_err());
+        query.salary_interval = Some("decade".into());
+        assert!(validate_salary_filters(&query).is_err());
+        query.salary_interval = Some("1 YEAR".into());
+        assert!(validate_salary_filters(&query).is_ok());
+        query.salary_min = Some(f64::INFINITY);
+        assert!(validate_salary_filters(&query).is_err());
+    }
+
+    #[tokio::test]
+    async fn database_filters_match_canonical_tokens_locations_employment_and_salary_units() {
+        let db = crate::test_database().await;
+        let fixtures = [
+            (
+                "Software Development Engineer",
+                "Bengaluru, India",
+                Some("remote"),
+                Some("FullTime"),
+                Some("Product"),
+                Some("Core"),
+                Some(130000.0),
+                Some(150000.0),
+                Some("USD"),
+                Some("year"),
+            ),
+            (
+                "Front-end Engineer",
+                "India",
+                None,
+                Some("full time"),
+                Some("Product"),
+                None,
+                Some(50.0),
+                Some(70.0),
+                Some("USD"),
+                Some("hour"),
+            ),
+            (
+                "UI Designer",
+                "Remote",
+                Some("remote"),
+                Some("Part_Time"),
+                None,
+                None,
+                Some(90000.0),
+                Some(90000.0),
+                Some("USD"),
+                Some("year"),
+            ),
+            (
+                "Engineer",
+                "Global office",
+                Some("onsite"),
+                Some("Full-time"),
+                None,
+                None,
+                Some(100000.0),
+                Some(110000.0),
+                Some("USD"),
+                Some("year"),
+            ),
+            (
+                "Engineer",
+                "Mumbai, India",
+                None,
+                Some("Intern"),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ),
+            (
+                "Engineer",
+                "India",
+                Some("hybrid"),
+                Some("Contractor"),
+                None,
+                None,
+                Some(120000.0),
+                Some(130000.0),
+                Some("EUR"),
+                Some("year"),
+            ),
+            (
+                "Engineer",
+                "Remote; Dublin",
+                Some("remote"),
+                None,
+                None,
+                None,
+                Some(140000.0),
+                Some(150000.0),
+                Some("USD"),
+                None,
+            ),
+            (
+                "Discount 50%_off\\\\sale",
+                "India",
+                None,
+                Some("Full Time"),
+                Some("Sales"),
+                None,
+                None,
+                None,
+                None,
+                None,
+            ),
+        ];
+        for (
+            index,
+            (
+                title,
+                location,
+                workplace,
+                employment,
+                department,
+                team,
+                low,
+                high,
+                currency,
+                interval,
+            ),
+        ) in fixtures.into_iter().enumerate()
+        {
+            sqlx::query("INSERT INTO job_postings (source, source_job_id, title, company, location, workplace_type, employment_type, department, team, salary_min, salary_max, salary_currency, salary_interval, url) VALUES ('test', $1, $2, 'Fixture', $3, $4, $5, $6, $7, $8, $9, $10, $11, 'https://example.test/job')")
+                .bind(index.to_string()).bind(title).bind(location).bind(workplace).bind(employment)
+                .bind(department).bind(team).bind(low).bind(high).bind(currency).bind(interval)
+                .execute(&db).await.unwrap();
+        }
+
+        let roles = ListingQuery {
+            role: Some("software engineer".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &roles).await, 1);
+        let front = ListingQuery {
+            role: Some("front end".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &front).await, 1);
+        let city = ListingQuery {
+            location: Some("India".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &city).await, 5);
+        let other_country_remote = ListingQuery {
+            location: Some("Canada".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &other_country_remote).await, 0);
+        let other_country_inclusive = ListingQuery {
+            location: Some("Canada".into()),
+            include_global: Some(true),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &other_country_inclusive).await, 2);
+        let inclusive = ListingQuery {
+            location: Some("India".into()),
+            include_global: Some(true),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &inclusive).await, 7);
+        let no_unknown = ListingQuery {
+            workplace: Some("remote".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &no_unknown).await, 3);
+        let with_unknown = ListingQuery {
+            workplace: Some("remote".into()),
+            include_unknown_workplace: Some(true),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &with_unknown).await, 6);
+        let full_time = ListingQuery {
+            employment: Some("full-time".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &full_time).await, 4);
+        let part_time = ListingQuery {
+            employment: Some("parttime".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &part_time).await, 1);
+        let contract = ListingQuery {
+            employment: Some("fixed-term".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &contract).await, 1);
+        let internship = ListingQuery {
+            employment: Some("Internship".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &internship).await, 1);
+        let salary = ListingQuery {
+            salary_min: Some(120000.0),
+            currency: Some("USD".into()),
+            salary_interval: Some("annual".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &salary).await, 1);
+        let hourly = ListingQuery {
+            salary_max: Some(100.0),
+            currency: Some("USD".into()),
+            salary_interval: Some("hour".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &hourly).await, 1);
+        let literal = ListingQuery {
+            role: Some("50%_off\\\\sale".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &literal).await, 1);
+        let percent = ListingQuery {
+            role: Some("%".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &percent).await, 1);
+        for filters in [
+            ListingQuery {
+                location: Some("%".into()),
+                ..empty_filters()
+            },
+            ListingQuery {
+                workplace: Some("%".into()),
+                ..empty_filters()
+            },
+            ListingQuery {
+                department: Some("%".into()),
+                ..empty_filters()
+            },
+            ListingQuery {
+                currency: Some("%".into()),
+                ..empty_filters()
+            },
+        ] {
+            assert_eq!(matching_count(&db, &filters).await, 0);
+        }
+        let global = ListingQuery {
+            location: Some("India".into()),
+            include_global: Some(true),
+            ..empty_filters()
+        };
+        // A broad substring such as "Global office" is deliberately not considered worldwide.
+        let global_count = matching_count(&db, &global).await;
+        assert_eq!(global_count, 7);
+    }
+
+    #[test]
+    fn maps_ashby_compensation_only_from_salary_component_and_keeps_location_details() {
+        let raw = serde_json::json!({
+            "employmentType": "FullTime",
+            "address": {"postalAddress": {"addressLocality": "Bengaluru", "addressCountry": "India"}},
+            "secondaryLocations": [{"location": "Mumbai", "address": {"addressCountry": "India"}}],
+            "compensation": {"summaryComponents": [
+                {"compensationType": "EquityPercentage", "minValue": 1.0, "maxValue": 2.0},
+                {"compensationType": "Salary", "interval": "1 YEAR", "currencyCode": "INR", "minValue": 1200000, "maxValue": 1800000}
+            ]}
+        });
+        let job = JobPosting::basic(
+            "ashby",
+            "1",
+            "Engineer".into(),
+            "Example",
+            Some("Remote".into()),
+            None,
+            "https://example.test/job".into(),
+            &raw,
+        );
+        assert_eq!(job.employment_type.as_deref(), Some("Full-time"));
+        assert_eq!(job.salary_min, Some(1_200_000.0));
+        assert_eq!(job.salary_max, Some(1_800_000.0));
+        assert_eq!(job.salary_currency.as_deref(), Some("INR"));
+        assert_eq!(job.salary_interval.as_deref(), Some("year"));
+        let api_job = serde_json::to_value(&job).unwrap();
+        assert_eq!(api_job["salary_interval"], "year");
+        let location = job.location.unwrap();
+        assert!(
+            location.contains("Remote")
+                && location.contains("Bengaluru")
+                && location.contains("India")
+                && location.contains("Mumbai")
+        );
     }
 
     #[test]
@@ -649,7 +1401,13 @@ mod tests {
         );
         assert_eq!(job.posted_at.as_deref(), Some("2026-10-02T11:31:50-04:00"));
         assert_eq!(job.department.as_deref(), Some("Product Engineering"));
-        assert_eq!(job.location.as_deref(), Some("Dublin"));
+        assert_eq!(job.location.as_deref(), Some("Dublin, Ireland"));
+        let mut adapter_override = job.clone();
+        adapter_override.location = Some("Dublin".into());
+        assert_eq!(
+            location_for_storage(&adapter_override).as_deref(),
+            Some("Dublin, Ireland")
+        );
         assert_eq!(job.description.as_deref(), Some("<p>Role details</p>"));
     }
 

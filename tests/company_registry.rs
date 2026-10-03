@@ -24,16 +24,22 @@ fn bundled_registry_parses_and_validates() {
     let registry = load_registry().expect("companies.json parses");
     registry.validate().expect("companies.json validates");
 
-    let companies = registry.by_name();
-    assert!(companies["Supabase"].is_resolved());
-    assert_eq!(companies["Supabase"].provider.as_deref(), Some("ashby"));
-    assert_eq!(companies["Supabase"].board.as_deref(), Some("supabase"));
-    assert_eq!(companies["AG1"].provider.as_deref(), Some("greenhouse"));
-    assert_eq!(companies["AG1"].board.as_deref(), Some("ag1"));
-    assert_eq!(companies["Doist"].provider.as_deref(), Some("workable"));
-    assert_eq!(companies["GrowthX AI"].board.as_deref(), Some("GrowthX AI"));
-    assert_eq!(companies["Deel"].enabled, false);
-    assert!(companies["Deel"].provider.is_none());
+    let company = |name: &str| {
+        registry
+            .companies
+            .iter()
+            .find(|item| item.name == name)
+            .unwrap()
+    };
+    assert!(company("Supabase").is_resolved());
+    assert_eq!(company("Supabase").provider.as_deref(), Some("ashby"));
+    assert_eq!(company("Supabase").board.as_deref(), Some("supabase"));
+    assert_eq!(company("AG1").provider.as_deref(), Some("greenhouse"));
+    assert_eq!(company("AG1").board.as_deref(), Some("ag1"));
+    assert_eq!(company("Doist").provider.as_deref(), Some("workable"));
+    assert_eq!(company("GrowthX AI").board.as_deref(), Some("GrowthX AI"));
+    assert!(!company("Deel").enabled);
+    assert!(company("Deel").provider.is_none());
 }
 
 #[test]

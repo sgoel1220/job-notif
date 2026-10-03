@@ -1401,11 +1401,11 @@
     },
     {
       "name": "Remote",
-      "enabled": false,
+      "enabled": true,
       "provider": "remote-public",
       "board": "remote",
       "source": "existing-direct",
-      "notes": "Disabled: apply.remote.com/api/public/jobs returns HTTP 403. Do not use the unrelated Greenhouse /remote board; enable only after verifying an official public Remote.com feed."
+      "notes": "Official apply.remote.com/api/public/jobs verified HTTP 200 with 14 open, accepting listings on 2026-10-03. Restored remote-public source; failed requests preserve prior listings. Do not use the unrelated Greenhouse /remote board."
     },
     {
       "name": "Replit",

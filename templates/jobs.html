@@ -25,6 +25,9 @@
     .filters input,.filters select { width: 100%; min-height: 32px; padding: 5px 7px; border: 1px solid #ccc; border-radius: 3px; background: #fff; color: #222; font: inherit; }
     .salary-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .filter-actions { display: flex; align-items: end; gap: 6px; }
+    .filter-options { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 12px; color: #555; font-size: 12px; }
+    .filter-options label { display: flex; align-items: center; gap: 5px; }
+    .filter-options input { margin: 0; }
     .saved-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; color: #555; }
     .saved-filters { display: flex; flex-wrap: wrap; gap: 5px; }
     .saved-filters button { padding: 4px 8px; }
@@ -72,9 +75,13 @@
     <form class="filters" id="filter-form">
       <label>Job title or keyword<input id="role-filter" type="search" placeholder="e.g. product designer" autocomplete="off"></label>
       <label>Location<input id="location-filter" type="search" placeholder="e.g. India" autocomplete="off"></label>
-      <label>Work arrangement<select id="workplace-filter"><option value="">Any arrangement</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></select></label>
+      <label>Work arrangement<select id="workplace-filter"><option value="">Any arrangement</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option><option value="unknown">Not specified</option></select></label>
       <div class="filter-actions"><button type="reset">Clear filters</button></div>
     </form>
+    <div class="filter-options">
+      <label><input id="include-global" type="checkbox"> Include generic Remote/Worldwide/Anywhere/Global labels (eligibility unverified)</label>
+      <label><input id="include-unknown-workplace" type="checkbox"> Include listings with unspecified arrangement</label>
+    </div>
     <section class="table-card" aria-label="Job listings">
       <div class="table-scroll"><table>
         <thead><tr><th>Role &amp; details</th><th>Company</th><th>Location</th><th>Arrangement</th><th>Salary</th><th>Posted</th></tr></thead>
@@ -116,8 +123,9 @@
         const currency = job.salary_currency ? `${job.salary_currency} ` : "";
         const low = job.salary_min == null ? "?" : money(job.salary_min);
         const high = job.salary_max == null ? "?" : money(job.salary_max);
-        return job.salary_min != null && job.salary_max != null && job.salary_min === job.salary_max
+        const range = job.salary_min != null && job.salary_max != null && job.salary_min === job.salary_max
           ? `${currency}${low}` : `${currency}${low}–${high}`;
+        return `${range} / ${job.salary_interval || "unit not specified"}`;
       };
       const dateText = value => {
         const date = parsedDate(value);
@@ -125,7 +133,6 @@
       };
       function render() {
         const pageCount = Math.max(1, Math.ceil(total / Number(pageSize.value)));
-        page = Math.min(page, pageCount);
         const start = (page - 1) * Number(pageSize.value);
         body.replaceChildren();
         count.textContent = `${total} open roles`;
@@ -151,7 +158,7 @@
           const location = document.createElement("td"); location.className = "location"; location.textContent = job.location || "Not listed";
           const arrangement = document.createElement("td");
           if (job.workplace_type) { const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = job.workplace_type; arrangement.append(badge); }
-          else arrangement.textContent = "Not listed";
+          else arrangement.textContent = "Not specified";
           const salary = document.createElement("td"); salary.className = "salary"; salary.textContent = salaryText(job);
           const posted = document.createElement("td"); posted.className = "posted"; posted.textContent = dateText(job.posted_at);
           row.append(role, company, location, arrangement, salary, posted); body.append(row);
@@ -163,6 +170,8 @@
         const { signal } = activeRequest;
         count.textContent = "Loading open roles…";
         const params = new URLSearchParams({ page: String(page), page_size: pageSize.value });
+        if (document.querySelector("#include-global").checked) params.set("include_global", "true");
+        if (document.querySelector("#include-unknown-workplace").checked) params.set("include_unknown_workplace", "true");
         const filterNames = { role: "role", location: "location", workplace: "workplace" };
         for (const [key, name] of Object.entries(filterNames)) {
           const value = fields[key].value.trim();
@@ -172,6 +181,11 @@
           const response = await fetch(`/api/job-postings?${params}`, { signal });
           if (!response.ok) throw new Error(`Request failed (${response.status})`);
           const result = await response.json();
+          const pageCount = Math.max(1, Math.ceil(result.total / Number(pageSize.value)));
+          if (page > pageCount) {
+            page = pageCount;
+            return load();
+          }
           jobs = result.jobs;
           total = result.total;
           render();
@@ -185,8 +199,15 @@
       fields.role.addEventListener("input", () => { clearTimeout(filterTimer); filterTimer = setTimeout(() => { page = 1; load(); }, 250); });
       fields.location.addEventListener("input", () => { clearTimeout(filterTimer); filterTimer = setTimeout(() => { page = 1; load(); }, 250); });
       fields.workplace.addEventListener("change", () => { page = 1; load(); });
+      document.querySelector("#include-global").addEventListener("change", () => { page = 1; load(); });
+      document.querySelector("#include-unknown-workplace").addEventListener("change", () => { page = 1; load(); });
       form.addEventListener("submit", event => event.preventDefault());
-      form.addEventListener("reset", () => { clearTimeout(filterTimer); page = 1; requestAnimationFrame(load); });
+      form.addEventListener("reset", () => {
+        clearTimeout(filterTimer); page = 1;
+        document.querySelector("#include-global").checked = false;
+        document.querySelector("#include-unknown-workplace").checked = false;
+        requestAnimationFrame(load);
+      });
       previousPage.addEventListener("click", () => { if (page > 1) { page--; load(); } });
       nextPage.addEventListener("click", () => { page++; load(); });
       pageSize.addEventListener("change", () => { page = 1; load(); });

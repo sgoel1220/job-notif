@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 pub const REGISTRY_JSON: &str = include_str!("../companies.json");
 pub const CURRENT_SCHEMA_VERSION: u32 = 1;
@@ -139,13 +139,6 @@ impl CompanyRegistry {
         }
     }
 
-    pub fn by_name(&self) -> HashMap<&str, &CompanyEntry> {
-        self.companies
-            .iter()
-            .map(|company| (company.name.as_str(), company))
-            .collect()
-    }
-
     pub fn enabled_companies(&self) -> impl Iterator<Item = &CompanyEntry> {
         self.companies.iter().filter(|company| company.enabled)
     }
@@ -180,7 +173,12 @@ mod tests {
         let registry = load_registry().expect("registry JSON parses");
         registry.validate().expect("registry validates");
         assert!(registry.enabled_companies().count() >= 17);
-        assert!(!registry.by_name()["Remote"].enabled);
+        let remote = registry
+            .enabled_companies()
+            .find(|company| company.name == "Remote")
+            .expect("verified official Remote feed is enabled");
+        assert_eq!(remote.provider.as_deref(), Some("remote-public"));
+        assert_eq!(remote.board.as_deref(), Some("remote"));
     }
 
     #[test]

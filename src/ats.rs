@@ -1,5 +1,6 @@
-use std::{borrow::Cow, fmt, str::FromStr, time::Duration};
+use std::{fmt, future::Future, str::FromStr, time::Duration};
 
+use futures_util::stream::{self, StreamExt};
 use quick_xml::{events::Event, Reader};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -8,10 +9,13 @@ use crate::job_postings::JobPosting;
 
 pub(crate) const ATS_SOURCE_PREFIX: &str = "ats/";
 const USER_AGENT: &str = "JobNotifier/0.1 (+https://github.com/ConorsCode/open-jobs-data port)";
-const DEFAULT_REQUEST_TIMEOUT_SECS: u64 = 20;
 const DEFAULT_PAGE_SIZE: usize = 100;
 const WORKDAY_PAGE_SIZE: usize = 20;
-const MAX_JOBS_PER_COMPANY: usize = 500;
+// Hard safety bound, deliberately above the old 500-job truncation point. Hitting this bound
+// while the provider reports more results is an error, never a partial-success snapshot.
+const MAX_JOBS_PER_COMPANY: usize = 10_000;
+const WORKDAY_DETAIL_CONCURRENCY: usize = 8;
+const COMPANY_FETCH_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -194,6 +198,11 @@ pub(crate) enum AtsFetchError {
         url: String,
         message: String,
     },
+    Timeout {
+        provider: AtsProvider,
+        company: String,
+        timeout: Duration,
+    },
 }
 
 impl fmt::Display for AtsFetchError {
@@ -229,6 +238,14 @@ impl fmt::Display for AtsFetchError {
                 formatter,
                 "{provider} returned HTTP {status} for {company} at {url}"
             ),
+            Self::Timeout {
+                provider,
+                company,
+                timeout,
+            } => write!(
+                formatter,
+                "{provider} fetch timed out for {company} after {timeout:?}"
+            ),
             Self::InvalidFeed {
                 provider,
                 company,
@@ -243,10 +260,6 @@ impl fmt::Display for AtsFetchError {
 }
 
 impl std::error::Error for AtsFetchError {}
-
-pub(crate) fn default_http_client() -> Result<reqwest::Client, AtsFetchError> {
-    http_client_with_timeout(Duration::from_secs(DEFAULT_REQUEST_TIMEOUT_SECS))
-}
 
 pub(crate) fn http_client_with_timeout(
     timeout: Duration,
@@ -273,20 +286,28 @@ pub(crate) async fn fetch_company_jobs_with_options(
     options: &AtsFetchOptions,
 ) -> Result<Vec<FetchedAtsJob>, AtsFetchError> {
     let identity = company.identity()?;
-    let jobs = match company.provider {
-        AtsProvider::Greenhouse => fetch_greenhouse(client, company, &identity).await?,
-        AtsProvider::Lever => fetch_lever(client, company, &identity).await?,
-        AtsProvider::Ashby => fetch_ashby(client, company, &identity).await?,
-        AtsProvider::SmartRecruiters => {
-            fetch_smartrecruiters(client, company, &identity, options).await?
-        }
-        AtsProvider::Workable => fetch_workable(client, company, &identity).await?,
-        AtsProvider::Recruitee => fetch_recruitee(client, company, &identity).await?,
-        AtsProvider::Personio => fetch_personio(client, company, &identity).await?,
-        AtsProvider::BambooHr => fetch_bamboohr(client, company, &identity).await?,
-        AtsProvider::Workday => fetch_workday(client, company, &identity, options).await?,
-    };
-    Ok(to_fetched_jobs(identity, jobs))
+    run_with_deadline(
+        COMPANY_FETCH_TIMEOUT,
+        identity.provider,
+        identity.company_name.clone(),
+        async {
+            let jobs = match company.provider {
+                AtsProvider::Greenhouse => fetch_greenhouse(client, company, &identity).await?,
+                AtsProvider::Lever => fetch_lever(client, company, &identity).await?,
+                AtsProvider::Ashby => fetch_ashby(client, company, &identity).await?,
+                AtsProvider::SmartRecruiters => {
+                    fetch_smartrecruiters(client, company, &identity, options).await?
+                }
+                AtsProvider::Workable => fetch_workable(client, company, &identity).await?,
+                AtsProvider::Recruitee => fetch_recruitee(client, company, &identity).await?,
+                AtsProvider::Personio => fetch_personio(client, company, &identity).await?,
+                AtsProvider::BambooHr => fetch_bamboohr(client, company, &identity).await?,
+                AtsProvider::Workday => fetch_workday(client, company, &identity, options).await?,
+            };
+            Ok(to_fetched_jobs(identity, jobs))
+        },
+    )
+    .await
 }
 
 async fn fetch_greenhouse(
@@ -324,7 +345,7 @@ async fn fetch_ashby(
 ) -> Result<Vec<NormalizedAtsJob>, AtsFetchError> {
     let slug = company.slug()?;
     let url = format!(
-        "https://api.ashbyhq.com/posting-api/job-board/{}",
+        "https://api.ashbyhq.com/posting-api/job-board/{}?includeCompensation=true",
         percent_encode_component(slug)
     );
     let data = get_json(client, identity, &url).await?;
@@ -337,21 +358,58 @@ async fn fetch_smartrecruiters(
     identity: &AtsSourceIdentity,
     options: &AtsFetchOptions,
 ) -> Result<Vec<NormalizedAtsJob>, AtsFetchError> {
-    let slug = company.slug()?;
+    fetch_smartrecruiters_at(
+        client,
+        identity,
+        company.slug()?,
+        options,
+        "https://api.smartrecruiters.com/v1",
+    )
+    .await
+}
+
+async fn fetch_smartrecruiters_at(
+    client: &reqwest::Client,
+    identity: &AtsSourceIdentity,
+    slug: &str,
+    options: &AtsFetchOptions,
+    api_base: &str,
+) -> Result<Vec<NormalizedAtsJob>, AtsFetchError> {
     let mut offset = 0usize;
-    let mut total_found = usize::MAX;
+    let mut expected_total = None;
     let mut jobs = Vec::<Value>::new();
-    while offset < total_found {
+    let mut ids = std::collections::HashSet::new();
+    loop {
         let Some(limit) = next_page_limit(DEFAULT_PAGE_SIZE, jobs.len(), options.capped_max_jobs())
         else {
+            let total = expected_total.ok_or_else(|| {
+                invalid_feed(
+                    identity,
+                    "smartrecruiters:pagination",
+                    "pagination ended before receiving totalFound",
+                )
+            })?;
+            ensure_complete_snapshot(identity, "smartrecruiters:pagination", jobs.len(), total)?;
             break;
         };
         let url = format!(
-            "https://api.smartrecruiters.com/v1/companies/{}/postings?limit={limit}&offset={offset}",
+            "{api_base}/companies/{}/postings?limit={limit}&offset={offset}",
             percent_encode_component(slug)
         );
         let data = get_json(client, identity, &url).await?;
-        total_found = optional_usize(&data, "totalFound").unwrap_or(0);
+        let total = optional_usize(&data, "totalFound")
+            .ok_or_else(|| invalid_feed(identity, &url, "missing or invalid totalFound"))?;
+        match expected_total {
+            Some(previous) if previous != total => {
+                return Err(invalid_feed(
+                    identity,
+                    &url,
+                    format!("totalFound changed from {previous} to {total}"),
+                ))
+            }
+            None => expected_total = Some(total),
+            _ => {}
+        }
         let page = array_at(&data, &["content"]).ok_or_else(|| {
             invalid_feed(
                 identity,
@@ -359,19 +417,45 @@ async fn fetch_smartrecruiters(
                 "missing content array in SmartRecruiters page",
             )
         })?;
-        if page.is_empty() {
+        if page.len() > limit {
+            return Err(invalid_feed(
+                identity,
+                &url,
+                format!(
+                    "page has {} jobs, exceeding requested limit {limit}",
+                    page.len()
+                ),
+            ));
+        }
+        if jobs.len().saturating_add(page.len()) > total {
+            return Err(invalid_feed(
+                identity,
+                &url,
+                "received more jobs than reported totalFound",
+            ));
+        }
+        for job in page {
+            let id = required_string(identity, &url, job, &["id"], "id")?;
+            if !ids.insert(id.clone()) {
+                return Err(invalid_feed(
+                    identity,
+                    &url,
+                    format!("duplicate posting id {id}"),
+                ));
+            }
+            jobs.push(job.clone());
+        }
+        if page.is_empty() || jobs.len() >= total {
+            ensure_complete_snapshot(identity, &url, jobs.len(), total)?;
             break;
         }
-        let page_len = page.len();
-        jobs.extend(page.iter().take(limit).cloned());
-        offset += page_len;
+        offset += page.len();
     }
-    let data = json!({ "content": jobs });
     map_smartrecruiters_jobs(
         identity,
         "smartrecruiters:aggregated",
-        &data,
-        company.slug()?,
+        &json!({"content":jobs}),
+        slug,
     )
 }
 
@@ -448,12 +532,21 @@ async fn fetch_workday(
         workday.tenant, workday.shard, workday.tenant, workday.site
     );
     let mut offset = 0usize;
-    let mut total = usize::MAX;
+    let mut total: Option<usize> = None;
     let mut postings = Vec::<Value>::new();
-    while offset < total {
+    let mut posting_ids = std::collections::HashSet::new();
+    loop {
         let Some(limit) =
             next_page_limit(WORKDAY_PAGE_SIZE, postings.len(), options.capped_max_jobs())
         else {
+            let total = total.ok_or_else(|| {
+                invalid_feed(
+                    identity,
+                    "workday:pagination",
+                    "pagination ended before receiving a total",
+                )
+            })?;
+            ensure_complete_snapshot(identity, "workday:pagination", postings.len(), total)?;
             break;
         };
         let url = format!("{base_url}/jobs");
@@ -464,20 +557,89 @@ async fn fetch_workday(
             &json!({ "limit": limit, "offset": offset, "searchText": "" }),
         )
         .await?;
-        if offset == 0 {
-            total = optional_usize(&data, "total").unwrap_or(0);
+        let reported_total = optional_usize(&data, "total")
+            .ok_or_else(|| invalid_feed(identity, &url, "missing or invalid total"))?;
+        match total {
+            Some(previous) if previous != reported_total => {
+                return Err(invalid_feed(
+                    identity,
+                    &url,
+                    format!("total changed from {previous} to {reported_total}"),
+                ))
+            }
+            None => total = Some(reported_total),
+            _ => {}
         }
+        let total_value = total.unwrap_or_default();
         let page = array_at(&data, &["jobPostings"]).ok_or_else(|| {
             invalid_feed(identity, &url, "missing jobPostings array in Workday page")
         })?;
-        if page.is_empty() {
+        if page.len() > limit {
+            return Err(invalid_feed(
+                identity,
+                &url,
+                format!(
+                    "page has {} postings, exceeding requested limit {limit}",
+                    page.len()
+                ),
+            ));
+        }
+        if postings.len().saturating_add(page.len()) > total_value {
+            return Err(invalid_feed(
+                identity,
+                &url,
+                "received more postings than reported total",
+            ));
+        }
+        for posting in page {
+            let id = required_string(identity, &url, posting, &["externalPath"], "externalPath")?;
+            if !posting_ids.insert(id.clone()) {
+                return Err(invalid_feed(
+                    identity,
+                    &url,
+                    format!("duplicate externalPath {id}"),
+                ));
+            }
+            postings.push(posting.clone());
+        }
+        if page.is_empty() || postings.len() >= total_value {
+            ensure_complete_snapshot(identity, &url, postings.len(), total_value)?;
             break;
         }
-        let page_len = page.len();
-        postings.extend(page.iter().take(limit).cloned());
-        offset += page_len;
+        offset += page.len();
     }
-    let data = json!({ "jobPostings": postings });
+    ensure_complete_snapshot(
+        identity,
+        "workday:pagination",
+        postings.len(),
+        total.ok_or_else(|| invalid_feed(identity, "workday:pagination", "missing total"))?,
+    )?;
+    let enriched = stream::iter(postings.into_iter().map(|posting| {
+        let client = client.clone();
+        let identity = identity.clone();
+        let base_url = base_url.clone();
+        async move {
+            let Some(path) = string_at(&posting, &["externalPath"]) else {
+                return posting;
+            };
+            let detail_url = format!(
+                "{base_url}/job{}",
+                if path.starts_with('/') {
+                    path
+                } else {
+                    format!("/{path}")
+                }
+            );
+            match get_json(&client, &identity, &detail_url).await {
+                Ok(detail) => merge_workday_detail(posting, detail),
+                Err(_) => posting, // Summary remains usable; unavailable detail metadata stays unknown.
+            }
+        }
+    }))
+    .buffer_unordered(WORKDAY_DETAIL_CONCURRENCY)
+    .collect::<Vec<_>>()
+    .await;
+    let data = json!({ "jobPostings": enriched });
     map_workday_jobs(identity, "workday:aggregated", &data, workday)
 }
 
@@ -583,9 +745,17 @@ fn map_greenhouse_jobs(
         .ok_or_else(|| invalid_feed(identity, url, "missing jobs array in Greenhouse feed"))?;
     jobs.iter()
         .map(|job| {
-            let locations = string_at(job, &["location", "name"])
+            let mut locations = string_at(job, &["location", "name"])
                 .into_iter()
                 .collect::<Vec<_>>();
+            if let Some(offices) = array_at(job, &["offices"]) {
+                locations.extend(
+                    offices
+                        .iter()
+                        .filter_map(|office| string_at(office, &["name"])),
+                );
+            }
+            dedupe(&mut locations);
             let apply_url = required_string(identity, url, job, &["absolute_url"], "absolute_url")?;
             Ok(NormalizedAtsJob {
                 id: string_at(job, &["id"]).unwrap_or_else(|| apply_url.clone()),
@@ -619,9 +789,12 @@ fn map_lever_jobs(
             } else {
                 string_at(categories, &["location"]).into_iter().collect()
             };
-            let explicit_remote = match string_at(job, &["workplaceType"]).as_deref() {
+            let normalized_workplace =
+                string_at(job, &["workplaceType"]).map(|value| value.trim().to_ascii_lowercase());
+            let explicit_hybrid = normalized_workplace.as_deref() == Some("hybrid");
+            let explicit_remote = match normalized_workplace.as_deref() {
                 Some("remote") => Some(true),
-                Some("on-site") => Some(false),
+                Some("on-site") | Some("onsite") => Some(false),
                 _ => None,
             };
             let apply_url = string_at(job, &["applyUrl"])
@@ -633,7 +806,7 @@ fn map_lever_jobs(
                 id: string_at(job, &["id"]).unwrap_or_else(|| apply_url.clone()),
                 title: string_at(job, &["text"]).unwrap_or_else(|| "Untitled role".to_owned()),
                 department: string_at(categories, &["department"]),
-                workplace_type: workplace_type(&locations, explicit_remote, false),
+                workplace_type: workplace_type(&locations, explicit_remote, explicit_hybrid),
                 employment_type: string_at(categories, &["commitment"]),
                 apply_url,
                 posted_at: string_at(job, &["createdAt"]).and_then(|value| {
@@ -680,7 +853,7 @@ fn map_ashby_jobs(
                     .filter(|title| !title.is_empty())
                     .unwrap_or_else(|| "Untitled role".to_owned()),
                 department: string_at(job, &["department"]),
-                workplace_type: workplace_type(&locations, bool_at(job, &["isRemote"]), false),
+                workplace_type: ashby_workplace_type(job, &locations),
                 employment_type: string_at(job, &["employmentType"]),
                 apply_url,
                 posted_at: string_at(job, &["publishedAt"]),
@@ -720,7 +893,7 @@ fn map_smartrecruiters_jobs(
                 workplace_type: workplace_type(
                     &locations,
                     bool_at(job, &["location", "remote"]),
-                    false,
+                    bool_at(job, &["location", "hybrid"]) == Some(true),
                 ),
                 employment_type: string_at(job, &["typeOfEmployment", "label"]),
                 apply_url: format!(
@@ -822,13 +995,6 @@ fn map_personio_jobs(
     xml: &str,
 ) -> Result<Vec<NormalizedAtsJob>, AtsFetchError> {
     let positions = parse_personio_xml(identity, url, xml)?;
-    if positions.is_empty() && !xml.contains("<position") {
-        return Err(invalid_feed(
-            identity,
-            url,
-            "Personio XML contains no positions",
-        ));
-    }
     Ok(positions
         .into_iter()
         .map(|position| NormalizedAtsJob {
@@ -919,9 +1085,20 @@ fn map_workday_jobs(
             } else {
                 format!("/{external_path}")
             };
-            let locations = string_at(posting, &["locationsText"])
+            let mut locations = string_at(posting, &["locationsText"])
                 .into_iter()
                 .collect::<Vec<_>>();
+            if let Some(info) = posting.get("jobPostingInfo") {
+                locations.extend(string_at(info, &["location"]));
+                if let Some(additional) = array_at(info, &["additionalLocations"]) {
+                    locations.extend(additional.iter().filter_map(value_to_string));
+                }
+                if let Some(descriptor) = string_at(info, &["jobRequisitionLocation", "descriptor"])
+                {
+                    locations.push(descriptor);
+                }
+            }
+            dedupe(&mut locations);
             let explicit_remote = match string_at(posting, &["remoteType"]).as_deref() {
                 Some("Remote") => Some(true),
                 Some("On-Site") | Some("Onsite") => Some(false),
@@ -937,7 +1114,15 @@ fn map_workday_jobs(
                     "https://{}.{}.myworkdayjobs.com/{}{}",
                     workday.tenant, workday.shard, workday.site, normalized_path
                 ),
-                posted_at: None,
+                posted_at: [
+                    ["jobPostingInfo", "startDate"].as_slice(),
+                    &["jobPostingInfo", "postedAt"],
+                    &["postedDate"],
+                    &["postedAt"],
+                ]
+                .iter()
+                .find_map(|path| string_at(posting, path))
+                .filter(|date| is_absolute_iso_date(date)),
                 locations,
                 details: posting.clone(),
             })
@@ -949,7 +1134,6 @@ fn to_fetched_jobs(identity: AtsSourceIdentity, jobs: Vec<NormalizedAtsJob>) -> 
     let source_key = identity.source_key();
     jobs.into_iter()
         .map(|job| {
-            let location = join_locations(&job.locations);
             let workplace_type = job.workplace_type;
             let mut posting = JobPosting::basic(
                 &source_key,
@@ -961,7 +1145,18 @@ fn to_fetched_jobs(identity: AtsSourceIdentity, jobs: Vec<NormalizedAtsJob>) -> 
                 job.apply_url,
                 &job.details,
             );
-            posting.location = location.or(posting.location);
+            let generic_location = posting.location.take();
+            let mut merged_locations = job.locations.clone();
+            if let Some(generic_location) = generic_location {
+                merged_locations.extend(
+                    generic_location
+                        .split(';')
+                        .map(str::trim)
+                        .filter(|v| !v.is_empty())
+                        .map(str::to_owned),
+                );
+            }
+            posting.location = join_locations(&merged_locations);
             posting.workplace_type = workplace_type.or(posting.workplace_type);
             posting.department = job.department.or(posting.department);
             posting.employment_type = job.employment_type.or(posting.employment_type);
@@ -990,55 +1185,242 @@ fn parse_personio_xml(
     xml: &str,
 ) -> Result<Vec<PersonioPosition>, AtsFetchError> {
     let mut reader = Reader::from_str(xml);
-    reader.config_mut().trim_text(true);
-    let mut positions = Vec::<PersonioPosition>::new();
+    reader.config_mut().trim_text(false);
+    let mut positions = Vec::new();
     let mut current: Option<PersonioPosition> = None;
-
+    let mut stack: Vec<String> = Vec::new();
+    let mut root_closed = false;
+    let mut field_text = String::new();
+    let mut field_tag: Option<String> = None;
     loop {
-        match reader.read_event() {
-            Ok(Event::Start(element)) if element.name().as_ref() == b"position" => {
-                current = Some(PersonioPosition::default());
+        let event = reader
+            .read_event()
+            .map_err(|error| invalid_feed(identity, url, error.to_string()))?;
+        match event {
+            Event::Start(element) => {
+                let tag = String::from_utf8_lossy(element.name().as_ref()).into_owned();
+                if stack.is_empty() {
+                    if root_closed || tag != "workzag-jobs" {
+                        return Err(invalid_feed(
+                            identity,
+                            url,
+                            "expected one workzag-jobs root element",
+                        ));
+                    }
+                } else if stack == ["workzag-jobs"] {
+                    if tag != "position" {
+                        return Err(invalid_feed(
+                            identity,
+                            url,
+                            "unexpected element beneath Personio root",
+                        ));
+                    }
+                    current = Some(PersonioPosition::default());
+                } else if stack == ["workzag-jobs", "position"] {
+                    field_tag = Some(tag.clone());
+                    field_text.clear();
+                } else {
+                    return Err(invalid_feed(
+                        identity,
+                        url,
+                        "nested markup inside a Personio text field is invalid",
+                    ));
+                }
+                stack.push(tag);
             }
-            Ok(Event::Start(element)) => {
-                let tag = element.name().as_ref().to_vec();
-                if let Some(position) = current.as_mut() {
-                    let text = reader
-                        .read_text(element.name())
-                        .map_err(|error| invalid_feed(identity, url, error.to_string()))?;
-                    let text = xml_text_to_string(text);
-                    if text.is_empty() {
-                        continue;
+            Event::Empty(element) => {
+                let tag = String::from_utf8_lossy(element.name().as_ref()).into_owned();
+                if stack.is_empty() {
+                    if root_closed || tag != "workzag-jobs" {
+                        return Err(invalid_feed(
+                            identity,
+                            url,
+                            "expected one workzag-jobs root element",
+                        ));
                     }
-                    match tag.as_slice() {
-                        b"id" => position.id = text,
-                        b"name" => position.name = text,
-                        b"department" => position.department = Some(text),
-                        b"employmentType" => position.employment_type = Some(text),
-                        b"createdAt" => position.created_at = Some(text),
-                        b"office" => position.locations.extend(
-                            text.split(',')
-                                .map(str::trim)
-                                .filter(|value| !value.is_empty())
-                                .map(str::to_owned),
-                        ),
-                        _ => {}
+                    root_closed = true;
+                } else if stack == ["workzag-jobs"] {
+                    if tag != "position" {
+                        return Err(invalid_feed(
+                            identity,
+                            url,
+                            "unexpected element beneath Personio root",
+                        ));
                     }
+                    return Err(invalid_feed(
+                        identity,
+                        url,
+                        "Personio position missing mandatory id/name",
+                    ));
+                } else if stack == ["workzag-jobs", "position"] {
+                    field_tag = Some(tag);
+                    field_text.clear();
+                    commit_personio_field(
+                        identity,
+                        url,
+                        current.as_mut().ok_or_else(|| {
+                            invalid_feed(identity, url, "position field outside position")
+                        })?,
+                        field_tag.as_deref().unwrap(),
+                        "",
+                    )?;
+                    field_tag = None;
+                } else {
+                    return Err(invalid_feed(
+                        identity,
+                        url,
+                        "nested empty markup inside Personio field",
+                    ));
                 }
             }
-            Ok(Event::End(element)) if element.name().as_ref() == b"position" => {
-                if let Some(mut position) = current.take() {
+            Event::Text(text) => {
+                let decoded = text
+                    .decode()
+                    .map_err(|error| invalid_feed(identity, url, error.to_string()))?;
+                let decoded = quick_xml::escape::unescape(&decoded)
+                    .map_err(|error| invalid_feed(identity, url, error.to_string()))?;
+                if let Some(_) = field_tag {
+                    field_text.push_str(&decoded);
+                } else if !decoded.trim().is_empty() {
+                    return Err(invalid_feed(
+                        identity,
+                        url,
+                        "unexpected text outside a Personio field",
+                    ));
+                }
+            }
+            Event::CData(text) => {
+                let decoded = text
+                    .decode()
+                    .map_err(|error| invalid_feed(identity, url, error.to_string()))?;
+                if field_tag.is_some() {
+                    field_text.push_str(&decoded);
+                } else if !decoded.trim().is_empty() {
+                    return Err(invalid_feed(
+                        identity,
+                        url,
+                        "unexpected CDATA outside a Personio field",
+                    ));
+                }
+            }
+            Event::GeneralRef(reference) => {
+                let name = reference
+                    .decode()
+                    .map_err(|error| invalid_feed(identity, url, error.to_string()))?;
+                let resolved = if let Some(character) = reference
+                    .resolve_char_ref()
+                    .map_err(|error| invalid_feed(identity, url, error.to_string()))?
+                {
+                    character.to_string()
+                } else {
+                    quick_xml::escape::resolve_predefined_entity(&name)
+                        .ok_or_else(|| {
+                            invalid_feed(identity, url, format!("undeclared XML entity &{name};"))
+                        })?
+                        .to_owned()
+                };
+                if field_tag.is_some() {
+                    field_text.push_str(&resolved);
+                } else {
+                    return Err(invalid_feed(
+                        identity,
+                        url,
+                        "entity reference outside a Personio field",
+                    ));
+                }
+            }
+            Event::End(element) => {
+                let tag = String::from_utf8_lossy(element.name().as_ref()).into_owned();
+                if stack.last().map(String::as_str) != Some(tag.as_str()) {
+                    return Err(invalid_feed(
+                        identity,
+                        url,
+                        "mismatched Personio XML closing tag",
+                    ));
+                }
+                if stack.len() == 3 {
+                    let position = current.as_mut().ok_or_else(|| {
+                        invalid_feed(identity, url, "field close outside Personio position")
+                    })?;
+                    commit_personio_field(identity, url, position, &tag, field_text.trim())?;
+                    field_tag = None;
+                    field_text.clear();
+                } else if stack.len() == 2 && tag == "position" {
+                    let mut position = current.take().ok_or_else(|| {
+                        invalid_feed(identity, url, "unexpected Personio position close")
+                    })?;
                     dedupe(&mut position.locations);
-                    if !position.id.trim().is_empty() && !position.name.trim().is_empty() {
-                        positions.push(position);
+                    if position.id.trim().is_empty() || position.name.trim().is_empty() {
+                        return Err(invalid_feed(
+                            identity,
+                            url,
+                            "Personio position missing mandatory id/name",
+                        ));
                     }
+                    positions.push(position);
+                } else if stack.len() == 1 && tag == "workzag-jobs" {
+                    root_closed = true;
                 }
+                stack.pop();
             }
-            Ok(Event::Eof) => break,
-            Ok(_) => {}
-            Err(error) => return Err(invalid_feed(identity, url, error.to_string())),
+            Event::Eof => break,
+            Event::Decl(_) | Event::Comment(_) | Event::PI(_) => {}
+            Event::DocType(_) => {
+                return Err(invalid_feed(
+                    identity,
+                    url,
+                    "DOCTYPE is not allowed in Personio XML",
+                ))
+            }
         }
     }
+    if !root_closed || !stack.is_empty() || current.is_some() {
+        return Err(invalid_feed(
+            identity,
+            url,
+            "incomplete Personio XML document",
+        ));
+    }
     Ok(positions)
+}
+
+fn commit_personio_field(
+    identity: &AtsSourceIdentity,
+    url: &str,
+    position: &mut PersonioPosition,
+    tag: &str,
+    value: &str,
+) -> Result<(), AtsFetchError> {
+    let value = value.trim();
+    match tag {
+        "id" => position.id = value.to_owned(),
+        "name" => position.name = value.to_owned(),
+        "department" if !value.is_empty() => position.department = Some(value.to_owned()),
+        "employmentType" if !value.is_empty() => position.employment_type = Some(value.to_owned()),
+        "createdAt" if !value.is_empty() => position.created_at = Some(value.to_owned()),
+        "office" if !value.is_empty() => position.locations.extend(
+            value
+                .split(',')
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .map(str::to_owned),
+        ),
+        _ => {}
+    }
+    let _ = (identity, url);
+    Ok(())
+}
+
+fn merge_workday_detail(mut posting: Value, detail: Value) -> Value {
+    // Workday's detail response wraps authoritative fields under jobPostingInfo. Keep the
+    // listing payload intact while exposing that object to the normalizer and stored details.
+    if let Some(info) = detail.get("jobPostingInfo").cloned() {
+        if let Some(object) = posting.as_object_mut() {
+            object.insert("jobPostingInfo".to_owned(), info);
+            object.insert("detailResponse".to_owned(), detail);
+        }
+    }
+    posting
 }
 
 fn invalid_feed(
@@ -1114,6 +1496,18 @@ fn value_to_string(value: &Value) -> Option<String> {
     }
 }
 
+fn ashby_workplace_type(job: &Value, locations: &[String]) -> Option<String> {
+    match string_at(job, &["workplaceType"])
+        .map(|v| v.trim().to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("hybrid") => Some("hybrid".to_owned()),
+        Some("remote") => Some("remote".to_owned()),
+        Some("onsite") | Some("on-site") | Some("on site") => Some("onsite".to_owned()),
+        _ => workplace_type(locations, bool_at(job, &["isRemote"]), false),
+    }
+}
+
 fn workplace_type(
     locations: &[String],
     explicit_remote: Option<bool>,
@@ -1149,6 +1543,111 @@ fn dedupe(values: &mut Vec<String>) {
     values.retain(|value| seen.insert(value.to_ascii_lowercase()));
 }
 
+fn is_absolute_iso_date(value: &str) -> bool {
+    let date = value.get(..10).unwrap_or("");
+    let bytes = date.as_bytes();
+    if bytes.len() != 10
+        || bytes[4] != b'-'
+        || bytes[7] != b'-'
+        || !bytes
+            .iter()
+            .enumerate()
+            .all(|(i, b)| i == 4 || i == 7 || b.is_ascii_digit())
+        || (value.len() > 10 && !matches!(value.as_bytes()[10], b'T' | b't' | b' '))
+    {
+        return false;
+    }
+    if value.len() > 10 {
+        let tail = &value[11..];
+        if tail.len() < 8
+            || !tail.as_bytes()[0..2].iter().all(u8::is_ascii_digit)
+            || tail.as_bytes()[2] != b':'
+            || !tail.as_bytes()[3..5].iter().all(u8::is_ascii_digit)
+            || tail.as_bytes()[5] != b':'
+            || !tail.as_bytes()[6..8].iter().all(u8::is_ascii_digit)
+        {
+            return false;
+        }
+        let hour: u8 = tail[0..2].parse().unwrap_or(255);
+        let minute: u8 = tail[3..5].parse().unwrap_or(255);
+        let second: u8 = tail[6..8].parse().unwrap_or(255);
+        if hour > 23 || minute > 59 || second > 60 {
+            return false;
+        }
+        let suffix = &tail[8..];
+        let suffix = if let Some(fraction) = suffix.strip_prefix('.') {
+            let digits = fraction.bytes().take_while(u8::is_ascii_digit).count();
+            if digits == 0 {
+                return false;
+            }
+            &fraction[digits..]
+        } else {
+            suffix
+        };
+        if suffix != "Z" && suffix != "z" {
+            if suffix.len() != 6
+                || !matches!(suffix.as_bytes()[0], b'+' | b'-')
+                || suffix.as_bytes()[3] != b':'
+                || !suffix.as_bytes()[1..3].iter().all(u8::is_ascii_digit)
+                || !suffix.as_bytes()[4..6].iter().all(u8::is_ascii_digit)
+            {
+                return false;
+            }
+            let tz_hour: u8 = suffix[1..3].parse().unwrap_or(255);
+            let tz_minute: u8 = suffix[4..6].parse().unwrap_or(255);
+            if tz_hour > 23 || tz_minute > 59 {
+                return false;
+            }
+        }
+    }
+    let year: u32 = date[..4].parse().unwrap_or(0);
+    let month: u32 = date[5..7].parse().unwrap_or(0);
+    let day: u32 = date[8..10].parse().unwrap_or(0);
+    let days = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) => 29,
+        2 => 28,
+        _ => 0,
+    };
+    day >= 1 && day <= days
+}
+
+fn ensure_complete_snapshot(
+    identity: &AtsSourceIdentity,
+    url: &str,
+    fetched: usize,
+    total: usize,
+) -> Result<(), AtsFetchError> {
+    if fetched < total {
+        Err(invalid_feed(
+            identity,
+            url,
+            format!("incomplete snapshot: fetched {fetched} of {total}"),
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+async fn run_with_deadline<T, F>(
+    timeout: Duration,
+    provider: AtsProvider,
+    company: String,
+    future: F,
+) -> Result<T, AtsFetchError>
+where
+    F: Future<Output = Result<T, AtsFetchError>>,
+{
+    tokio::time::timeout(timeout, future)
+        .await
+        .map_err(|_| AtsFetchError::Timeout {
+            provider,
+            company,
+            timeout,
+        })?
+}
+
 fn next_page_limit(page_size: usize, current_jobs: usize, max_jobs: usize) -> Option<usize> {
     if current_jobs >= max_jobs || page_size == 0 || max_jobs == 0 {
         return None;
@@ -1156,12 +1655,7 @@ fn next_page_limit(page_size: usize, current_jobs: usize, max_jobs: usize) -> Op
     Some(page_size.min(max_jobs - current_jobs))
 }
 
-fn xml_text_to_string(text: Cow<'_, str>) -> String {
-    let trimmed = text.trim();
-    quick_xml::escape::unescape(trimmed)
-        .map(Cow::into_owned)
-        .unwrap_or_else(|_| trimmed.to_owned())
-}
+// XML text and CDATA decoding is handled event-by-event in parse_personio_xml.
 
 fn percent_encode_component(input: &str) -> String {
     let mut encoded = String::new();
@@ -1210,6 +1704,57 @@ mod tests {
             company_name: "Example".to_owned(),
             source_ref: "example".to_owned(),
         }
+    }
+
+    fn mock_smart_server<F>(
+        requests: usize,
+        responder: F,
+    ) -> (String, std::thread::JoinHandle<Vec<(usize, usize)>>)
+    where
+        F: Fn(usize, usize) -> String + Send + 'static,
+    {
+        use std::io::{Read, Write};
+        use std::net::TcpListener;
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let handle = std::thread::spawn(move || {
+            let mut seen = Vec::new();
+            for _ in 0..requests {
+                let (mut socket, _) = listener.accept().unwrap();
+                let mut request = Vec::new();
+                let mut buf = [0u8; 1024];
+                loop {
+                    let count = socket.read(&mut buf).unwrap();
+                    if count == 0 {
+                        break;
+                    }
+                    request.extend_from_slice(&buf[..count]);
+                    if request.windows(4).any(|w| w == b"\r\n\r\n") {
+                        break;
+                    }
+                }
+                let first = String::from_utf8_lossy(&request)
+                    .lines()
+                    .next()
+                    .unwrap_or("")
+                    .to_owned();
+                let url = first.split_whitespace().nth(1).unwrap_or("/");
+                let query = url.split_once('?').map(|(_, q)| q).unwrap_or("");
+                let get = |key: &str| {
+                    query
+                        .split('&')
+                        .find_map(|p| p.strip_prefix(&format!("{key}=")))
+                        .and_then(|v| v.parse::<usize>().ok())
+                        .unwrap_or(0)
+                };
+                let (limit, offset) = (get("limit"), get("offset"));
+                seen.push((offset, limit));
+                let body = responder(offset, limit);
+                write!(socket, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).unwrap();
+            }
+            seen
+        });
+        (format!("http://{address}/v1"), handle)
     }
 
     #[test]
@@ -1296,6 +1841,308 @@ mod tests {
         assert_eq!(job.workplace_type.as_deref(), Some("remote"));
         assert_eq!(job.employment_type.as_deref(), Some("permanent"));
         assert_eq!(job.url, "https://example.jobs.personio.de/job/123");
+    }
+
+    #[test]
+    fn personio_validates_document_and_decodes_cdata() {
+        let identity = identity(AtsProvider::Personio);
+        let xml = r#"<workzag-jobs><position><id><![CDATA[a&b/42]]></id><name><![CDATA[R&D Engineer]]></name><office><![CDATA[Berlin, India]]></office></position></workzag-jobs>"#;
+        let mapped = map_personio_jobs(&identity, "fixture", xml).unwrap();
+        assert_eq!(mapped.len(), 1);
+        assert_eq!(mapped[0].id, "a&b/42");
+        assert_eq!(mapped[0].title, "R&D Engineer");
+        assert_eq!(mapped[0].locations, ["Berlin", "India"]);
+        let fetched = to_fetched_jobs(identity.clone(), mapped);
+        assert_eq!(
+            fetched[0].posting.url,
+            "https://example.jobs.personio.de/job/a%26b%2F42"
+        );
+        assert!(map_personio_jobs(
+            &identity,
+            "fixture",
+            "<workzag-jobs><position><id>42</id><name>Engineer</name>"
+        )
+        .is_err());
+        assert!(map_personio_jobs(&identity, "fixture", "<wrong-root/>").is_err());
+        assert!(map_personio_jobs(
+            &identity,
+            "fixture",
+            "<workzag-jobs><position><id>42</id></position></workzag-jobs>"
+        )
+        .is_err());
+        assert!(map_personio_jobs(&identity, "fixture", "<workzag-jobs/>")
+            .unwrap()
+            .is_empty());
+        assert_eq!(
+            map_personio_jobs(
+                &identity,
+                "fixture",
+                "<workzag-jobs><position><id>7</id><name>A&amp;B</name></position></workzag-jobs>"
+            )
+            .unwrap()[0]
+                .title,
+            "A&B"
+        );
+        assert_eq!(
+            map_personio_jobs(&identity, "fixture", "<workzag-jobs><position><id>7</id><name><![CDATA[A&amp;B]]></name></position></workzag-jobs>").unwrap()[0].title,
+            "A&amp;B"
+        );
+        for malformed in [
+            "<workzag-jobs><position><id>7</id><name>A &bogus; B</name></position></workzag-jobs>",
+            "<workzag-jobs><position><id>7</id><name><b>Engineer</b></name></position></workzag-jobs>",
+            "<workzag-jobs><position><id>7</id><name>Engineer</name></position></workzag-jobs>trailing",
+            "<workzag-jobs/><workzag-jobs/>",
+        ] { assert!(map_personio_jobs(&identity, "fixture", malformed).is_err(), "accepted {malformed}"); }
+    }
+
+    #[test]
+    fn explicit_hybrid_overrides_remote_flags() {
+        let ashby_id = identity(AtsProvider::Ashby);
+        for remote in [true, false] {
+            let data = json!({"jobs": [{"id":"a", "title":"Role", "applyUrl":"https://apply", "workplaceType":"Hybrid", "isRemote":remote, "location":"Canada - Remote"}]});
+            let posting = &to_fetched_jobs(
+                ashby_id.clone(),
+                map_ashby_jobs(&ashby_id, "fixture", &data).unwrap(),
+            )[0]
+            .posting;
+            assert_eq!(posting.workplace_type.as_deref(), Some("hybrid"));
+        }
+        for (workplace, expected) in [
+            ("Remote", "remote"),
+            ("OnSite", "onsite"),
+            ("On-site", "onsite"),
+        ] {
+            let data = json!({"jobs": [{"id":"a", "title":"Role", "applyUrl":"https://apply", "workplaceType":workplace, "isRemote":false, "location":"In-office"}]});
+            let posting = &to_fetched_jobs(
+                ashby_id.clone(),
+                map_ashby_jobs(&ashby_id, "fixture", &data).unwrap(),
+            )[0]
+            .posting;
+            assert_eq!(posting.workplace_type.as_deref(), Some(expected));
+        }
+        let lever_id = identity(AtsProvider::Lever);
+        let data = json!([{"id":"l", "text":"Role", "applyUrl":"https://apply", "workplaceType":"hybrid", "categories":{"allLocations":["Canada - Remote"]}}]);
+        let posting = &to_fetched_jobs(
+            lever_id.clone(),
+            map_lever_jobs(&lever_id, "fixture", &data).unwrap(),
+        )[0]
+        .posting;
+        assert_eq!(posting.workplace_type.as_deref(), Some("hybrid"));
+        let sr_id = identity(AtsProvider::SmartRecruiters);
+        let data = json!({"content":[{"id":"s", "name":"Role", "location":{"remote":false,"hybrid":true,"fullLocation":"Toronto"}}]});
+        let posting = &to_fetched_jobs(
+            sr_id.clone(),
+            map_smartrecruiters_jobs(&sr_id, "fixture", &data, "fallback").unwrap(),
+        )[0]
+        .posting;
+        assert_eq!(posting.workplace_type.as_deref(), Some("hybrid"));
+    }
+
+    #[test]
+    fn preserves_greenhouse_secondary_offices_and_workday_details() {
+        let gh = identity(AtsProvider::Greenhouse);
+        let data = json!({"jobs":[{"id":1,"title":"Role","absolute_url":"https://apply","location":{"name":"New York"},"offices":[{"name":"India"}]}]});
+        let posting = &to_fetched_jobs(
+            gh.clone(),
+            map_greenhouse_jobs(&gh, "fixture", &data).unwrap(),
+        )[0]
+        .posting;
+        assert_eq!(posting.location.as_deref(), Some("New York; India"));
+        let workday = identity(AtsProvider::Workday);
+        let summary = json!({"externalPath":"/job/foo","locationsText":"United States","postedOn":"Posted 3 Days Ago"});
+        let enriched = merge_workday_detail(
+            summary,
+            json!({"jobPostingInfo":{"location":"Austin, TX","additionalLocations":["India"],"startDate":"2026-10-01"}}),
+        );
+        let result = map_workday_jobs(
+            &workday,
+            "fixture",
+            &json!({"jobPostings":[enriched]}),
+            &WorkdayConfig {
+                tenant: "example".into(),
+                site: "External".into(),
+                shard: "wd1".into(),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            result[0].locations,
+            ["United States", "Austin, TX", "India"]
+        );
+        assert_eq!(result[0].posted_at.as_deref(), Some("2026-10-01"));
+        let relative = map_workday_jobs(
+            &workday,
+            "fixture",
+            &json!({"jobPostings":[{"externalPath":"/job/rel","postedOn":"Posted 3 Days Ago"}]}),
+            &WorkdayConfig {
+                tenant: "example".into(),
+                site: "External".into(),
+                shard: "wd1".into(),
+            },
+        )
+        .unwrap();
+        assert_eq!(relative[0].posted_at, None);
+        assert!(is_absolute_iso_date("2026-10-03"));
+        assert!(!is_absolute_iso_date("Posted 3 Days Ago"));
+    }
+
+    #[tokio::test]
+    async fn smartrecruiters_http_pagination_fetches_all_jobs_past_500() {
+        let (base, server) = mock_smart_server(6, |offset, limit| {
+            let jobs = (offset..(offset + limit).min(501))
+                .map(|i| json!({"id":format!("j{i}"),"name":format!("Role {i}")}))
+                .collect::<Vec<_>>();
+            json!({"totalFound":501,"content":jobs}).to_string()
+        });
+        let id = identity(AtsProvider::SmartRecruiters);
+        let result = fetch_smartrecruiters_at(
+            &reqwest::Client::new(),
+            &id,
+            "test",
+            &AtsFetchOptions::default(),
+            &base,
+        )
+        .await
+        .unwrap();
+        let seen = server.join().unwrap();
+        assert_eq!(
+            seen.iter().map(|(offset, _)| *offset).collect::<Vec<_>>(),
+            [0, 100, 200, 300, 400, 500]
+        );
+        assert_eq!(result.len(), 501);
+        assert_eq!(result[500].id, "j500");
+    }
+
+    #[tokio::test]
+    async fn smartrecruiters_rejects_missing_total_oversized_pages_and_caps() {
+        let id = identity(AtsProvider::SmartRecruiters);
+        let (base, server) = mock_smart_server(1, |_, _| json!({"content":[]}).to_string());
+        assert!(fetch_smartrecruiters_at(
+            &reqwest::Client::new(),
+            &id,
+            "test",
+            &AtsFetchOptions::default(),
+            &base
+        )
+        .await
+        .is_err());
+        server.join().unwrap();
+
+        let (base, server) = mock_smart_server(1, |_, _| {
+            json!({"totalFound":1,"content":[{"name":"No ID"}]}).to_string()
+        });
+        assert!(fetch_smartrecruiters_at(
+            &reqwest::Client::new(),
+            &id,
+            "test",
+            &AtsFetchOptions::default(),
+            &base
+        )
+        .await
+        .is_err());
+        server.join().unwrap();
+
+        let (base, server) = mock_smart_server(1, |_, _| {
+            let content = (0..101)
+                .map(|i| json!({"id":format!("{i}"),"name":"Role"}))
+                .collect::<Vec<_>>();
+            json!({"totalFound":101,"content":content}).to_string()
+        });
+        assert!(fetch_smartrecruiters_at(
+            &reqwest::Client::new(),
+            &id,
+            "test",
+            &AtsFetchOptions::default(),
+            &base
+        )
+        .await
+        .is_err());
+        server.join().unwrap();
+
+        let (base, server) = mock_smart_server(1, |_, limit| {
+            let content = (0..limit)
+                .map(|i| json!({"id":format!("{i}"),"name":"Role"}))
+                .collect::<Vec<_>>();
+            json!({"totalFound":101,"content":content}).to_string()
+        });
+        let options = AtsFetchOptions {
+            max_jobs_per_company: 100,
+        };
+        assert!(
+            fetch_smartrecruiters_at(&reqwest::Client::new(), &id, "test", &options, &base)
+                .await
+                .is_err()
+        );
+        server.join().unwrap();
+    }
+
+    #[tokio::test]
+    async fn smartrecruiters_rejects_duplicate_ids_and_changing_totals() {
+        let id = identity(AtsProvider::SmartRecruiters);
+        for change_total in [false, true] {
+            let (base, server) = mock_smart_server(2, move |offset, limit| {
+                let total = if change_total && offset > 0 { 102 } else { 101 };
+                let content = if offset == 0 {
+                    (0..limit)
+                        .map(|i| json!({"id":format!("j{i}"),"name":"Role"}))
+                        .collect::<Vec<_>>()
+                } else {
+                    vec![json!({"id": if change_total { "j100" } else { "j0" },"name":"Role"})]
+                };
+                json!({"totalFound":total,"content":content}).to_string()
+            });
+            assert!(fetch_smartrecruiters_at(
+                &reqwest::Client::new(),
+                &id,
+                "test",
+                &AtsFetchOptions::default(),
+                &base
+            )
+            .await
+            .is_err());
+            server.join().unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn company_deadline_returns_an_error_without_partial_success() {
+        let result: Result<(), AtsFetchError> = run_with_deadline(
+            Duration::from_millis(5),
+            AtsProvider::Workday,
+            "Example".into(),
+            std::future::pending(),
+        )
+        .await;
+        assert!(matches!(result, Err(AtsFetchError::Timeout { .. })));
+    }
+
+    #[test]
+    fn maps_matching_smartrecruiters_job_after_index_500() {
+        let id = identity(AtsProvider::SmartRecruiters);
+        let jobs = (0..501).map(|index| json!({"id":format!("job-{index}"),"name":format!("Role {index}"),"location":{"fullLocation":"India"}})).collect::<Vec<_>>();
+        let mapped =
+            map_smartrecruiters_jobs(&id, "fixture", &json!({"content":jobs}), "example").unwrap();
+        assert_eq!(mapped.len(), 501);
+        assert_eq!(mapped[500].id, "job-500");
+    }
+
+    #[test]
+    fn pagination_can_continue_past_500_jobs_and_is_bounded() {
+        let mut total = 0;
+        let mut offsets = Vec::new();
+        while let Some(limit) = next_page_limit(100, total, 10_000) {
+            offsets.push(total);
+            total += if total == 600 { 50 } else { limit };
+            if total >= 650 {
+                break;
+            }
+        }
+        assert_eq!(offsets, [0, 100, 200, 300, 400, 500, 600]);
+        assert_eq!(total, 650);
+        assert_eq!(next_page_limit(100, 10_000, 10_000), None);
+        let id = identity(AtsProvider::Workday);
+        assert!(ensure_complete_snapshot(&id, "fixture", 650, 650).is_ok());
+        assert!(ensure_complete_snapshot(&id, "fixture", 500, 650).is_err());
     }
 
     #[test]
@@ -1510,13 +2357,12 @@ mod tests {
                 max_jobs_per_company: 900
             }
             .capped_max_jobs(),
-            500
+            900
         );
     }
 
     #[test]
     fn http_client_builders_configure_timeouts() {
-        default_http_client().expect("default client builds");
         http_client_with_timeout(Duration::from_millis(50)).expect("custom timeout client builds");
     }
 
