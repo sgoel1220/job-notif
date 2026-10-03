@@ -239,9 +239,19 @@ async fn sync_one_company(
             };
             let identity = source.identity().map_err(|error| error.to_string())?;
             let source_key = identity.source_key();
-            let fetched_jobs = fetch_ats_with_retry(client, &source)
-                .await
-                .map_err(|error| error.to_string())?;
+            let fetched_jobs = match fetch_ats_with_retry(client, &source).await {
+                Ok(jobs) => jobs,
+                // A permanent client error (e.g. Workday 422 for a retired or
+                // misconfigured board) cannot be fixed by retrying the whole
+                // sync. Isolate it to this company so healthy feeds can complete.
+                Err(error @ ats::AtsFetchError::Http { status, .. })
+                    if status.is_client_error() && status.as_u16() != 429 =>
+                {
+                    eprintln!("Skipping {name} for this sync after permanent ATS error: {error}");
+                    return Ok(());
+                }
+                Err(error) => return Err(error.to_string()),
+            };
             let postings: Vec<_> = fetched_jobs.into_iter().map(|job| job.posting).collect();
             if postings
                 .iter()
