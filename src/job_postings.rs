@@ -433,14 +433,7 @@ fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &
         .filter(|value| !value.trim().is_empty())
     {
         let pattern = format!("%{}%", value.trim());
-        query
-            .push(" AND (title ILIKE ")
-            .push_bind(pattern.clone())
-            .push(" OR COALESCE(department, '') ILIKE ")
-            .push_bind(pattern.clone())
-            .push(" OR COALESCE(team, '') ILIKE ")
-            .push_bind(pattern)
-            .push(")");
+        query.push(" AND title ILIKE ").push_bind(pattern);
     }
     if let Some(value) = filters
         .location
@@ -591,8 +584,8 @@ mod tests {
         append_listing_filters(&mut query, &filters);
         let sql = query.build().sql().to_owned();
         assert!(sql.contains("title ILIKE"));
-        assert!(sql.contains("COALESCE(department, '') ILIKE"));
-        assert!(sql.contains("COALESCE(team, '') ILIKE"));
+        assert!(!sql.contains("department"));
+        assert!(!sql.contains("team"));
         assert!(!sql.contains("description"));
         assert!(!sql.contains("company ILIKE"));
     }
