@@ -1,0 +1,49 @@
+name: Daily Render sync
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 00:00 UTC / 05:30 IST; GitHub may delay scheduled runs.
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: daily-render-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SYNC_URL: https://job-notif.onrender.com
+    steps:
+      - name: Wake the free Render instance
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            --connect-timeout 30 --max-time 180 \
+            --retry 3 --retry-delay 15 --retry-max-time 600 \
+            --output /dev/null "$SYNC_URL/"
+
+      - name: Trigger authenticated sync
+        shell: bash
+        env:
+          SYNC_BEARER_TOKEN: ${{ secrets.SYNC_BEARER_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SYNC_BEARER_TOKEN" ]]; then
+            echo '::error::Configure the repository secret SYNC_BEARER_TOKEN to match Render.'
+            exit 1
+          fi
+          # No POST retries: the server may still be syncing after a connection failure.
+          status=$(curl --silent --show-error \
+            --connect-timeout 30 --max-time 960 \
+            --request POST --header "Authorization: Bearer $SYNC_BEARER_TOKEN" \
+            --output /dev/null --write-out '%{http_code}' "$SYNC_URL/api/sync")
+          case "$status" in
+            204) echo 'All sources synced successfully.' ;;
+            409) echo '::notice::A sync is already running (possibly started by the app on wake-up); no duplicate was started. This does not confirm its completion.' ;;
+            *) echo "::error::Sync request failed with HTTP $status. Check Render logs for source failures."; exit 1 ;;
+          esac
