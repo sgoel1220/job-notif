@@ -641,6 +641,7 @@ pub(crate) struct StoredJobPosting {
     pub(crate) is_active: bool,
     pub(crate) role_category: String,
     pub(crate) country_codes: Vec<String>,
+    pub(crate) is_software_engineering: bool,
 }
 
 #[derive(Clone, Deserialize)]
@@ -678,7 +679,14 @@ pub(crate) const MAX_PAGE_SIZE: u64 = 100;
 fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &'a ListingQuery) {
     query.push(" WHERE is_active = TRUE");
     if let Some(category) = filters.role_category.as_deref().filter(|v| !v.is_empty()) {
-        query.push(" AND role_category = ").push_bind(category);
+        if category == "software-engineering" {
+            query.push(" AND is_software_engineering = TRUE");
+        } else {
+            query.push(" AND role_category = ").push_bind(category);
+            if category == "other" {
+                query.push(" AND is_software_engineering = FALSE");
+            }
+        }
     }
     if let Some(country) = filters.country.as_deref().filter(|v| !v.is_empty()) {
         query
@@ -848,13 +856,19 @@ fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &
 }
 
 fn validate_salary_filters(filters: &ListingQuery) -> Result<(), ApiError> {
-    if filters
-        .role_category
-        .as_deref()
-        .is_some_and(|value| !["", "intern", "sde-1", "sde-2", "other"].contains(&value))
-    {
+    if filters.role_category.as_deref().is_some_and(|value| {
+        ![
+            "",
+            "intern",
+            "sde-1",
+            "sde-2",
+            "software-engineering",
+            "other",
+        ]
+        .contains(&value)
+    }) {
         return Err(ApiError::bad_request(
-            "Unsupported role_category; use intern, sde-1, sde-2, or other.",
+            "Unsupported role_category; use intern, sde-1, sde-2, software-engineering, or other.",
         ));
     }
     if filters
@@ -925,7 +939,7 @@ pub(crate) async fn list(
          department, team, LEFT(description, 2000) AS description,
          LEFT(description_text, 2000) AS description_text, posted_at, salary_min,
          salary_max, salary_currency, salary_interval, url, is_active,
-         role_category, country_codes FROM job_postings",
+         role_category, country_codes, is_software_engineering FROM job_postings",
     );
     append_listing_filters(&mut rows_query, &filters);
     rows_query
@@ -1269,8 +1283,17 @@ mod tests {
             for country in [None, Some("US"), Some("IN")] {
                 let expected = fixtures
                     .iter()
-                    .filter(|(_, _, _, category, countries)| {
-                        *category == role && country.is_none_or(|c| countries.contains(&c))
+                    .filter(|(title, _, _, category, countries)| {
+                        *category == role
+                            && (role != "other"
+                                || [
+                                    "Internal Auditor",
+                                    "International Sales",
+                                    "Internet Engineer",
+                                    "Junior Accountant",
+                                ]
+                                .contains(title))
+                            && country.is_none_or(|c| countries.contains(&c))
                     })
                     .count() as i64;
                 let filters = ListingQuery {
@@ -1306,6 +1329,81 @@ mod tests {
             ..empty_filters()
         };
         assert_eq!(matching_count(&db, &filters).await, 2);
+    }
+
+    #[tokio::test]
+    async fn software_engineering_filter_spans_levels_and_other_excludes_it() {
+        let db = crate::test_database().await;
+        let software_titles = [
+            "Software Engineer Intern",
+            "Software Engineer I",
+            "Software Engineer II",
+            "Senior Software Engineer",
+            "Software Engineer",
+            "Software Developer",
+            "Software Engineering Manager",
+            "SDE-2",
+            "SDE10",
+            "Frontend Engineer",
+            "Back-end Developer",
+            "Full Stack Engineer",
+            "Mobile Engineer",
+            "iOS Developer",
+            "Android Software Engineer",
+            "Embedded Software Engineer",
+        ];
+        let other_titles = [
+            "Accountant",
+            "Internal Auditor",
+            "International Sales",
+            "Internet Engineer",
+            "Hardware Engineer",
+            "Software Sales Manager",
+            "Software EngineeringIntern",
+        ];
+        for (index, title) in software_titles
+            .iter()
+            .chain(other_titles.iter())
+            .chain([&"Design Intern"])
+            .enumerate()
+        {
+            sqlx::query("INSERT INTO job_postings (source, source_job_id, title, company, location, url) VALUES ('test', $1, $2, 'Example', 'India', 'https://example.com')")
+                .bind(index.to_string()).bind(title).execute(&db).await.unwrap();
+        }
+        let filters = ListingQuery {
+            role_category: Some("software-engineering".into()),
+            country: Some("IN".into()),
+            ..empty_filters()
+        };
+        assert!(validate_salary_filters(&filters).is_ok());
+        assert_eq!(
+            matching_count(&db, &filters).await,
+            software_titles.len() as i64
+        );
+        let other = ListingQuery {
+            role_category: Some("other".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &other).await, other_titles.len() as i64);
+        let interns = ListingQuery {
+            role_category: Some("intern".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &interns).await, 2);
+        sqlx::query(
+            "UPDATE job_postings SET title = 'Backend Engineer' WHERE title = 'Accountant'",
+        )
+        .execute(&db)
+        .await
+        .unwrap();
+        assert_eq!(
+            matching_count(&db, &filters).await,
+            software_titles.len() as i64 + 1
+        );
+        assert_eq!(
+            matching_count(&db, &other).await,
+            other_titles.len() as i64 - 1
+        );
     }
 
     #[tokio::test]

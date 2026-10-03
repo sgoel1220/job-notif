@@ -74,12 +74,12 @@
       <button class="refresh" type="button" id="refresh">⟳ Refresh</button>
     </div>
     <form class="filters" id="filter-form">
-      <label>Role<select id="role-filter"><option value="">All roles</option><option value="intern">Intern</option><option value="sde-1">SDE-1</option><option value="sde-2">SDE-2</option><option value="other">Other / unclassified</option></select></label>
+      <label>Role<select id="role-filter"><option value="">All roles</option><option value="intern">Intern</option><option value="sde-1">SDE-1</option><option value="sde-2">SDE-2</option><option value="software-engineering">Software engineering</option><option value="other">Other</option></select></label>
       <label>Country<select id="location-filter"><option value="">All countries</option><option value="US">USA</option><option value="IN">India</option></select></label>
       <label>Work arrangement<select id="workplace-filter"><option value="">Any arrangement</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option><option value="unknown">Not specified</option></select></label>
       <div class="filter-actions"><button type="reset">Clear filters</button></div>
     </form>
-    <p class="filter-note">SDE levels are mapped only from explicit title levels or junior/mid-level titles; unknown levels remain under All roles / Other. Country labels are not an eligibility guarantee.</p>
+    <p class="filter-note">Software engineering includes all levels and software internships. SDE levels use explicit title levels or junior/mid-level titles; unknown software levels remain under Software engineering. Other excludes software engineering and internships. Country labels are not an eligibility guarantee.</p>
     <div class="filter-options">
       <label><input id="include-global" type="checkbox"> Include generic Remote/Worldwide/Anywhere/Global labels (eligibility unverified)</label>
       <label><input id="include-unknown-workplace" type="checkbox"> Include listings with unspecified arrangement</label>
@@ -117,7 +117,7 @@
       const nextPage = document.querySelector("#next-page");
       let activeRequest;
 
-      const categoryLabels = { intern: "Intern", "sde-1": "SDE-1", "sde-2": "SDE-2", other: "Other / unclassified" };
+      const categoryLabels = { intern: "Intern", "sde-1": "SDE-1", "sde-2": "SDE-2", other: "Other" };
       const stripHtml = value => new DOMParser().parseFromString(value || "", "text/html").body.textContent || "";
       const parsedDate = value => value ? Date.parse(value) : NaN;
       const money = value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -153,7 +153,8 @@
           const role = document.createElement("td"); role.className = "role";
           const link = document.createElement("a"); link.href = job.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = job.title;
           role.append(link);
-          const meta = [categoryLabels[job.role_category], job.employment_type, job.department, job.team].filter(Boolean).join(" · ");
+          const category = job.role_category === "other" && job.is_software_engineering ? "Software engineering" : categoryLabels[job.role_category];
+          const meta = [category, job.employment_type, job.department, job.team].filter(Boolean).join(" · ");
           if (meta) { const small = document.createElement("small"); small.className = "role-meta"; small.textContent = meta; role.append(small); }
           const summary = stripHtml(job.description_text || job.description || "").replace(/\s+/g, " ").trim();
           if (summary) { const small = document.createElement("small"); small.className = "description"; small.textContent = summary.slice(0, 220) + (summary.length > 220 ? "…" : ""); role.append(small); }
