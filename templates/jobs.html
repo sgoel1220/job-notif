@@ -30,6 +30,11 @@
     .saved-filters button { padding: 4px 8px; }
     .saved-filters .remove { min-width: 26px; margin-left: 3px; }
     .table-card { overflow: hidden; border: 1px solid #ccc; }
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 14px 0; color: #555; }
+    .pagination button,.pagination select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 3px; background: #f5f5f5; color: #333; font: inherit; }
+    .pagination button:not(:disabled) { cursor: pointer; }
+    .pagination button:disabled { opacity: .5; }
+    .pagination label { display: flex; align-items: center; gap: 5px; }
     .table-scroll { overflow-x: auto; }
     table { width: 100%; min-width: 1000px; border-collapse: collapse; text-align: left; }
     th { padding: 9px 10px; border-bottom: 2px solid #ddd; background: #f5f5f5; color: #333; font-size: 12px; }
@@ -85,6 +90,12 @@
         <tbody id="listings-body"><tr><td class="empty" colspan="6">Loading listings…</td></tr></tbody>
       </table></div>
     </section>
+    <nav class="pagination" aria-label="Job listing pages">
+      <button type="button" id="previous-page" disabled>Previous</button>
+      <span id="page-status" aria-live="polite"></span>
+      <button type="button" id="next-page" disabled>Next</button>
+      <label>Per page <select id="page-size"><option>25</option><option>50</option><option>100</option></select></label>
+    </nav>
     <footer>Salary and eligibility details are supplied by job sources; confirm them on the employer’s site. Saved filters stay in this browser.</footer>
   </main>
   <script>
@@ -107,6 +118,11 @@
       };
       const savedRoot = document.querySelector("#saved-filters");
       let jobs = [];
+      let page = 1;
+      const pageSize = document.querySelector("#page-size");
+      const pageStatus = document.querySelector("#page-status");
+      const previousPage = document.querySelector("#previous-page");
+      const nextPage = document.querySelector("#next-page");
 
       const savedFilters = () => {
         try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
@@ -180,15 +196,22 @@
         const filter = currentFilter();
         const active = jobs.filter(job => job.is_active);
         const visible = active.filter(job => matches(job, filter));
+        const pageCount = Math.max(1, Math.ceil(visible.length / Number(pageSize.value)));
+        page = Math.min(page, pageCount);
+        const start = (page - 1) * Number(pageSize.value);
+        const pageJobs = visible.slice(start, start + Number(pageSize.value));
         body.replaceChildren();
         count.textContent = `${visible.length} of ${active.length} open roles`;
+        pageStatus.textContent = `${visible.length ? start + 1 : 0}–${Math.min(start + pageJobs.length, visible.length)} of ${visible.length} · Page ${page} of ${pageCount}`;
+        previousPage.disabled = page <= 1;
+        nextPage.disabled = page >= pageCount;
         if (!visible.length) {
           const row = document.createElement("tr");
           const cell = document.createElement("td"); cell.className = "empty"; cell.colSpan = 6;
           cell.textContent = jobs.length ? "No open roles match these filters." : "No listings yet. Check back soon for new opportunities.";
           row.append(cell); body.append(row); return;
         }
-        for (const job of visible) {
+        for (const job of pageJobs) {
           const row = document.createElement("tr");
           const role = document.createElement("td"); role.className = "role";
           const link = document.createElement("a"); link.href = job.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = job.title;
@@ -218,8 +241,11 @@
           body.replaceChildren();
         }
       }
-      form.addEventListener("submit", event => { event.preventDefault(); render(); });
-      form.addEventListener("reset", () => requestAnimationFrame(render));
+      form.addEventListener("submit", event => { event.preventDefault(); page = 1; render(); });
+      form.addEventListener("reset", () => { page = 1; requestAnimationFrame(render); });
+      previousPage.addEventListener("click", () => { if (page > 1) { page--; render(); } });
+      nextPage.addEventListener("click", () => { page++; render(); });
+      pageSize.addEventListener("change", () => { page = 1; render(); });
       document.querySelector("#refresh").addEventListener("click", load);
       document.querySelector("#save-filter").addEventListener("click", () => {
         const criteria = currentFilter();
