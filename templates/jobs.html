@@ -118,6 +118,7 @@
       };
       const savedRoot = document.querySelector("#saved-filters");
       let jobs = [];
+      let total = 0;
       let page = 1;
       const pageSize = document.querySelector("#page-size");
       const pageStatus = document.querySelector("#page-status");
@@ -131,10 +132,9 @@
       const currentFilter = () => Object.fromEntries(Object.entries(fields).map(([key, input]) => [key, input.value.trim()]));
       const setFilter = filter => {
         for (const [key, input] of Object.entries(fields)) input.value = filter[key] || "";
-        render();
+        page = 1;
+        load();
       };
-      const includes = (value, query) => !query || (value || "").toLocaleLowerCase().includes(query.toLocaleLowerCase());
-      const normalizeWorkplace = value => (value || "").toLocaleLowerCase().replace(/[^a-z]/g, "");
       const stripHtml = value => new DOMParser().parseFromString(value || "", "text/html").body.textContent || "";
       const parsedDate = value => value ? Date.parse(value) : NaN;
       const money = value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -150,29 +150,6 @@
         const date = parsedDate(value);
         return Number.isNaN(date) ? "Not listed" : new Date(date).toLocaleDateString();
       };
-      function matches(job, filter) {
-        if (!job.is_active) return false;
-        const description = stripHtml(job.description_text || job.description || "");
-        if (!includes(`${job.title} ${job.company} ${job.department || ""} ${job.team || ""} ${description}`, filter.role)) return false;
-        if (!includes(job.location, filter.location)) return false;
-        if (filter.workplace && !normalizeWorkplace(job.workplace_type).includes(filter.workplace)) return false;
-        if (!includes(job.employment_type, filter.employment)) return false;
-        if (!includes(`${job.department || ""} ${job.team || ""}`, filter.department)) return false;
-        const posted = parsedDate(job.posted_at);
-        if (filter.postedAfter && (Number.isNaN(posted) || posted < Date.parse(`${filter.postedAfter}T00:00:00Z`))) return false;
-        if (filter.postedBefore && (Number.isNaN(posted) || posted >= Date.parse(`${filter.postedBefore}T00:00:00Z`) + 86_400_000)) return false;
-        const minWanted = filter.salaryMin === "" ? null : Number(filter.salaryMin);
-        const maxWanted = filter.salaryMax === "" ? null : Number(filter.salaryMax);
-        if (minWanted != null || maxWanted != null) {
-          if (job.salary_min == null && job.salary_max == null) return false;
-          const jobLow = job.salary_min ?? job.salary_max;
-          const jobHigh = job.salary_max ?? job.salary_min;
-          if (minWanted != null && jobHigh < minWanted) return false;
-          if (maxWanted != null && jobLow > maxWanted) return false;
-        }
-        if (filter.currency && !includes(job.salary_currency, filter.currency)) return false;
-        return true;
-      }
       function renderSaved() {
         savedRoot.replaceChildren();
         const filters = savedFilters();
@@ -193,25 +170,21 @@
         }
       }
       function render() {
-        const filter = currentFilter();
-        const active = jobs.filter(job => job.is_active);
-        const visible = active.filter(job => matches(job, filter));
-        const pageCount = Math.max(1, Math.ceil(visible.length / Number(pageSize.value)));
+        const pageCount = Math.max(1, Math.ceil(total / Number(pageSize.value)));
         page = Math.min(page, pageCount);
         const start = (page - 1) * Number(pageSize.value);
-        const pageJobs = visible.slice(start, start + Number(pageSize.value));
         body.replaceChildren();
-        count.textContent = `${visible.length} of ${active.length} open roles`;
-        pageStatus.textContent = `${visible.length ? start + 1 : 0}–${Math.min(start + pageJobs.length, visible.length)} of ${visible.length} · Page ${page} of ${pageCount}`;
+        count.textContent = `${total} open roles`;
+        pageStatus.textContent = `${total ? start + 1 : 0}–${Math.min(start + jobs.length, total)} of ${total} · Page ${page} of ${pageCount}`;
         previousPage.disabled = page <= 1;
         nextPage.disabled = page >= pageCount;
-        if (!visible.length) {
+        if (!jobs.length) {
           const row = document.createElement("tr");
           const cell = document.createElement("td"); cell.className = "empty"; cell.colSpan = 6;
-          cell.textContent = jobs.length ? "No open roles match these filters." : "No listings yet. Check back soon for new opportunities.";
+          cell.textContent = total ? "No roles on this page." : "No open roles match these filters.";
           row.append(cell); body.append(row); return;
         }
-        for (const job of pageJobs) {
+        for (const job of jobs) {
           const row = document.createElement("tr");
           const role = document.createElement("td"); role.className = "role";
           const link = document.createElement("a"); link.href = job.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = job.title;
@@ -232,20 +205,29 @@
       }
       async function load() {
         count.textContent = "Loading open roles…";
+        const params = new URLSearchParams({ page: String(page), page_size: pageSize.value });
+        const filterNames = { role: "role", location: "location", workplace: "workplace", employment: "employment", department: "department", postedAfter: "posted_after", postedBefore: "posted_before", salaryMin: "salary_min", salaryMax: "salary_max", currency: "currency" };
+        for (const [key, name] of Object.entries(filterNames)) {
+          const value = fields[key].value.trim();
+          if (value) params.set(name, value);
+        }
         try {
-          const response = await fetch("/api/job-postings");
+          const response = await fetch(`/api/job-postings?${params}`);
           if (!response.ok) throw new Error(`Request failed (${response.status})`);
-          jobs = await response.json(); render();
+          const result = await response.json();
+          jobs = result.jobs;
+          total = result.total;
+          render();
         } catch (error) {
           count.textContent = `Could not load listings: ${error.message}`;
           body.replaceChildren();
         }
       }
-      form.addEventListener("submit", event => { event.preventDefault(); page = 1; render(); });
-      form.addEventListener("reset", () => { page = 1; requestAnimationFrame(render); });
-      previousPage.addEventListener("click", () => { if (page > 1) { page--; render(); } });
-      nextPage.addEventListener("click", () => { page++; render(); });
-      pageSize.addEventListener("change", () => { page = 1; render(); });
+      form.addEventListener("submit", event => { event.preventDefault(); page = 1; load(); });
+      form.addEventListener("reset", () => { page = 1; requestAnimationFrame(load); });
+      previousPage.addEventListener("click", () => { if (page > 1) { page--; load(); } });
+      nextPage.addEventListener("click", () => { page++; load(); });
+      pageSize.addEventListener("change", () => { page = 1; load(); });
       document.querySelector("#refresh").addEventListener("click", load);
       document.querySelector("#save-filter").addEventListener("click", () => {
         const criteria = currentFilter();

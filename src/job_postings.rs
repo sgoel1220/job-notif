@@ -1,6 +1,9 @@
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Query, State},
+    Json,
+};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgPool};
+use sqlx::{FromRow, PgPool, Postgres, QueryBuilder};
 
 use crate::{errors::ApiError, AppState};
 
@@ -349,14 +352,28 @@ pub(crate) async fn replace_source_prefix_snapshot(
                 posted_at = excluded.posted_at, salary_min = excluded.salary_min,
                 salary_max = excluded.salary_max, salary_currency = excluded.salary_currency,
                 url = excluded.url, details_json = excluded.details_json,
-                last_seen_at = CURRENT_TIMESTAMP::text, is_active = TRUE"
+                last_seen_at = CURRENT_TIMESTAMP::text, is_active = TRUE",
         )
-        .bind(&job.source).bind(&job.source_job_id).bind(&job.title).bind(&job.company)
-        .bind(&job.location).bind(&job.workplace_type).bind(&job.employment_type)
-        .bind(&job.department).bind(&job.team).bind(&job.description).bind(&job.description_text)
-        .bind(&job.posted_at).bind(job.salary_min).bind(job.salary_max).bind(&job.salary_currency)
-        .bind(&job.url).bind(&job.details_json)
-        .execute(&mut *tx).await.map_err(ApiError::database)?;
+        .bind(&job.source)
+        .bind(&job.source_job_id)
+        .bind(&job.title)
+        .bind(&job.company)
+        .bind(&job.location)
+        .bind(&job.workplace_type)
+        .bind(&job.employment_type)
+        .bind(&job.department)
+        .bind(&job.team)
+        .bind(&job.description)
+        .bind(&job.description_text)
+        .bind(&job.posted_at)
+        .bind(job.salary_min)
+        .bind(job.salary_max)
+        .bind(&job.salary_currency)
+        .bind(&job.url)
+        .bind(&job.details_json)
+        .execute(&mut *tx)
+        .await
+        .map_err(ApiError::database)?;
     }
     tx.commit().await.map_err(ApiError::database)
 }
@@ -364,8 +381,6 @@ pub(crate) async fn replace_source_prefix_snapshot(
 #[derive(Serialize, FromRow)]
 pub(crate) struct StoredJobPosting {
     pub(crate) id: i64,
-    pub(crate) source: String,
-    pub(crate) source_job_id: String,
     pub(crate) title: String,
     pub(crate) company: String,
     pub(crate) location: Option<String>,
@@ -380,25 +395,179 @@ pub(crate) struct StoredJobPosting {
     pub(crate) salary_max: Option<f64>,
     pub(crate) salary_currency: Option<String>,
     pub(crate) url: String,
-    pub(crate) details_json: String,
-    pub(crate) first_seen_at: String,
-    pub(crate) last_seen_at: String,
     pub(crate) is_active: bool,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct ListingQuery {
+    page: Option<u64>,
+    page_size: Option<u64>,
+    role: Option<String>,
+    location: Option<String>,
+    workplace: Option<String>,
+    employment: Option<String>,
+    department: Option<String>,
+    posted_after: Option<String>,
+    posted_before: Option<String>,
+    salary_min: Option<f64>,
+    salary_max: Option<f64>,
+    currency: Option<String>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct ListingPage {
+    jobs: Vec<StoredJobPosting>,
+    total: i64,
+    page: u64,
+    page_size: u64,
+}
+
+const DEFAULT_PAGE_SIZE: u64 = 25;
+const MAX_PAGE_SIZE: u64 = 100;
+
+fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &'a ListingQuery) {
+    query.push(" WHERE is_active = TRUE");
+    if let Some(value) = filters
+        .role
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        let pattern = format!("%{}%", value.trim());
+        query
+            .push(" AND (title ILIKE ")
+            .push_bind(pattern.clone())
+            .push(" OR company ILIKE ")
+            .push_bind(pattern.clone())
+            .push(" OR COALESCE(department, '') ILIKE ")
+            .push_bind(pattern.clone())
+            .push(" OR COALESCE(team, '') ILIKE ")
+            .push_bind(pattern.clone())
+            .push(" OR LEFT(COALESCE(description_text, description, ''), 4000) ILIKE ")
+            .push_bind(pattern)
+            .push(")");
+    }
+    if let Some(value) = filters
+        .location
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        query
+            .push(" AND COALESCE(location, '') ILIKE ")
+            .push_bind(format!("%{}%", value.trim()));
+    }
+    if let Some(value) = filters
+        .workplace
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        query
+            .push(" AND COALESCE(workplace_type, '') ILIKE ")
+            .push_bind(format!("%{}%", value.trim()));
+    }
+    if let Some(value) = filters
+        .employment
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        query
+            .push(" AND COALESCE(employment_type, '') ILIKE ")
+            .push_bind(format!("%{}%", value.trim()));
+    }
+    if let Some(value) = filters
+        .department
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        let pattern = format!("%{}%", value.trim());
+        query
+            .push(" AND (COALESCE(department, '') ILIKE ")
+            .push_bind(pattern.clone())
+            .push(" OR COALESCE(team, '') ILIKE ")
+            .push_bind(pattern)
+            .push(")");
+    }
+    if let Some(value) = filters
+        .posted_after
+        .as_deref()
+        .filter(|value| !value.is_empty())
+    {
+        query
+            .push(" AND LEFT(posted_at, 10) >= ")
+            .push_bind(value.to_owned());
+    }
+    if let Some(value) = filters
+        .posted_before
+        .as_deref()
+        .filter(|value| !value.is_empty())
+    {
+        query
+            .push(" AND LEFT(posted_at, 10) <= ")
+            .push_bind(value.to_owned());
+    }
+    if let Some(value) = filters.salary_min {
+        query
+            .push(" AND COALESCE(salary_max, salary_min) >= ")
+            .push_bind(value);
+    }
+    if let Some(value) = filters.salary_max {
+        query
+            .push(" AND COALESCE(salary_min, salary_max) <= ")
+            .push_bind(value);
+    }
+    if let Some(value) = filters
+        .currency
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        query
+            .push(" AND COALESCE(salary_currency, '') ILIKE ")
+            .push_bind(format!("%{}%", value.trim()));
+    }
 }
 
 pub(crate) async fn list(
     State(state): State<AppState>,
-) -> Result<Json<Vec<StoredJobPosting>>, ApiError> {
-    let rows = sqlx::query_as::<_, StoredJobPosting>(
-        "SELECT id, source, source_job_id, title, company, location, workplace_type,
-         employment_type, department, team, description, description_text, posted_at,
-         salary_min, salary_max, salary_currency, url, details_json, first_seen_at, last_seen_at,
-         is_active FROM job_postings ORDER BY company, title",
-    )
-    .fetch_all(&state.db)
-    .await
-    .map_err(ApiError::database)?;
-    Ok(Json(rows))
+    Query(filters): Query<ListingQuery>,
+) -> Result<Json<ListingPage>, ApiError> {
+    let page = filters.page.unwrap_or(1).max(1);
+    let page_size = filters
+        .page_size
+        .unwrap_or(DEFAULT_PAGE_SIZE)
+        .clamp(1, MAX_PAGE_SIZE);
+
+    let mut count_query = QueryBuilder::<Postgres>::new("SELECT COUNT(*) FROM job_postings");
+    append_listing_filters(&mut count_query, &filters);
+    let total = count_query
+        .build_query_scalar::<i64>()
+        .fetch_one(&state.db)
+        .await
+        .map_err(ApiError::database)?;
+
+    let offset = (page - 1).saturating_mul(page_size);
+    let mut rows_query = QueryBuilder::<Postgres>::new(
+        "SELECT id, title, company, location, workplace_type, employment_type,
+         department, team, LEFT(description, 2000) AS description,
+         LEFT(description_text, 2000) AS description_text, posted_at, salary_min,
+         salary_max, salary_currency, url, is_active FROM job_postings",
+    );
+    append_listing_filters(&mut rows_query, &filters);
+    rows_query
+        .push(" ORDER BY company, title, id LIMIT ")
+        .push_bind(page_size as i64)
+        .push(" OFFSET ")
+        .push_bind(offset.min(i64::MAX as u64) as i64);
+    let jobs = rows_query
+        .build_query_as::<StoredJobPosting>()
+        .fetch_all(&state.db)
+        .await
+        .map_err(ApiError::database)?;
+
+    Ok(Json(ListingPage {
+        jobs,
+        total,
+        page,
+        page_size,
+    }))
 }
 
 #[cfg(test)]
