@@ -70,20 +70,11 @@
       <button class="refresh" type="button" id="refresh">⟳ Refresh</button>
     </div>
     <form class="filters" id="filter-form">
-      <label>Title / keywords<input id="role-filter" type="search" placeholder="e.g. software developer"></label>
-      <label>Location / eligibility<input id="location-filter" type="search" placeholder="e.g. India"></label>
+      <label>Job title or keyword<input id="role-filter" type="search" placeholder="e.g. product designer" autocomplete="off"></label>
+      <label>Location<input id="location-filter" type="search" placeholder="e.g. India" autocomplete="off"></label>
       <label>Work arrangement<select id="workplace-filter"><option value="">Any arrangement</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></select></label>
-      <label>Employment type<input id="employment-filter" type="search" placeholder="e.g. full-time"></label>
-      <label>Department / team<input id="department-filter" type="search" placeholder="e.g. engineering"></label>
-      <label>Posted date<input id="posted-after-filter" type="date" aria-label="Posted on or after"></label>
-      <label>Posted through<input id="posted-before-filter" type="date" aria-label="Posted on or before"></label>
-      <label>Salary range (source currency)
-        <span class="salary-pair"><input id="salary-min-filter" type="number" min="0" step="any" placeholder="Min" aria-label="Minimum salary"><input id="salary-max-filter" type="number" min="0" step="any" placeholder="Max" aria-label="Maximum salary"></span>
-      </label>
-      <label>Currency<input id="currency-filter" type="search" placeholder="e.g. USD"></label>
-      <div class="filter-actions"><button type="submit">Apply filters</button><button type="button" id="save-filter">Save filter</button><button type="reset">Clear</button></div>
+      <div class="filter-actions"><button type="reset">Clear filters</button></div>
     </form>
-    <div class="saved-row"><strong>Saved filters:</strong><div class="saved-filters" id="saved-filters"><span>No saved filters yet.</span></div></div>
     <section class="table-card" aria-label="Job listings">
       <div class="table-scroll"><table>
         <thead><tr><th>Role &amp; details</th><th>Company</th><th>Location</th><th>Arrangement</th><th>Salary</th><th>Posted</th></tr></thead>
@@ -96,11 +87,10 @@
       <button type="button" id="next-page" disabled>Next</button>
       <label>Per page <select id="page-size"><option>25</option><option>50</option><option>100</option></select></label>
     </nav>
-    <footer>Salary and eligibility details are supplied by job sources; confirm them on the employer’s site. Saved filters stay in this browser.</footer>
+    <footer>Salary and eligibility details are supplied by job sources; confirm them on the employer’s site. Filters update listings as you choose them.</footer>
   </main>
   <script>
     (() => {
-      const STORAGE_KEY = "jobboard.saved-filters.v2";
       const body = document.querySelector("#listings-body");
       const count = document.querySelector("#result-count");
       const form = document.querySelector("#filter-form");
@@ -108,15 +98,7 @@
         role: document.querySelector("#role-filter"),
         location: document.querySelector("#location-filter"),
         workplace: document.querySelector("#workplace-filter"),
-        employment: document.querySelector("#employment-filter"),
-        department: document.querySelector("#department-filter"),
-        postedAfter: document.querySelector("#posted-after-filter"),
-        postedBefore: document.querySelector("#posted-before-filter"),
-        salaryMin: document.querySelector("#salary-min-filter"),
-        salaryMax: document.querySelector("#salary-max-filter"),
-        currency: document.querySelector("#currency-filter"),
       };
-      const savedRoot = document.querySelector("#saved-filters");
       let jobs = [];
       let total = 0;
       let page = 1;
@@ -125,16 +107,6 @@
       const previousPage = document.querySelector("#previous-page");
       const nextPage = document.querySelector("#next-page");
 
-      const savedFilters = () => {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-        catch { return []; }
-      };
-      const currentFilter = () => Object.fromEntries(Object.entries(fields).map(([key, input]) => [key, input.value.trim()]));
-      const setFilter = filter => {
-        for (const [key, input] of Object.entries(fields)) input.value = filter[key] || "";
-        page = 1;
-        load();
-      };
       const stripHtml = value => new DOMParser().parseFromString(value || "", "text/html").body.textContent || "";
       const parsedDate = value => value ? Date.parse(value) : NaN;
       const money = value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -150,25 +122,6 @@
         const date = parsedDate(value);
         return Number.isNaN(date) ? "Not listed" : new Date(date).toLocaleDateString();
       };
-      function renderSaved() {
-        savedRoot.replaceChildren();
-        const filters = savedFilters();
-        if (!filters.length) { savedRoot.textContent = "No saved filters yet."; return; }
-        for (const item of filters) {
-          const group = document.createElement("span");
-          const apply = document.createElement("button");
-          apply.type = "button"; apply.textContent = item.name; apply.title = "Apply saved filter";
-          apply.addEventListener("click", () => setFilter(item));
-          const remove = document.createElement("button");
-          remove.type = "button"; remove.className = "remove"; remove.textContent = "×";
-          remove.setAttribute("aria-label", `Delete ${item.name}`); remove.title = "Delete saved filter";
-          remove.addEventListener("click", () => {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(savedFilters().filter(saved => saved.id !== item.id)));
-            renderSaved();
-          });
-          group.append(apply, remove); savedRoot.append(group);
-        }
-      }
       function render() {
         const pageCount = Math.max(1, Math.ceil(total / Number(pageSize.value)));
         page = Math.min(page, pageCount);
@@ -206,7 +159,7 @@
       async function load() {
         count.textContent = "Loading open roles…";
         const params = new URLSearchParams({ page: String(page), page_size: pageSize.value });
-        const filterNames = { role: "role", location: "location", workplace: "workplace", employment: "employment", department: "department", postedAfter: "posted_after", postedBefore: "posted_before", salaryMin: "salary_min", salaryMax: "salary_max", currency: "currency" };
+        const filterNames = { role: "role", location: "location", workplace: "workplace" };
         for (const [key, name] of Object.entries(filterNames)) {
           const value = fields[key].value.trim();
           if (value) params.set(name, value);
@@ -223,22 +176,17 @@
           body.replaceChildren();
         }
       }
-      form.addEventListener("submit", event => { event.preventDefault(); page = 1; load(); });
-      form.addEventListener("reset", () => { page = 1; requestAnimationFrame(load); });
+      let filterTimer;
+      fields.role.addEventListener("input", () => { clearTimeout(filterTimer); filterTimer = setTimeout(() => { page = 1; load(); }, 250); });
+      fields.location.addEventListener("input", () => { clearTimeout(filterTimer); filterTimer = setTimeout(() => { page = 1; load(); }, 250); });
+      fields.workplace.addEventListener("change", () => { page = 1; load(); });
+      form.addEventListener("submit", event => event.preventDefault());
+      form.addEventListener("reset", () => { clearTimeout(filterTimer); page = 1; requestAnimationFrame(load); });
       previousPage.addEventListener("click", () => { if (page > 1) { page--; load(); } });
       nextPage.addEventListener("click", () => { page++; load(); });
       pageSize.addEventListener("change", () => { page = 1; load(); });
       document.querySelector("#refresh").addEventListener("click", load);
-      document.querySelector("#save-filter").addEventListener("click", () => {
-        const criteria = currentFilter();
-        if (!Object.values(criteria).some(Boolean)) { alert("Choose at least one filter before saving."); return; }
-        const name = prompt("Name this filter:");
-        if (!name || !name.trim()) return;
-        const filters = savedFilters();
-        filters.push({ ...criteria, name: name.trim(), id: `${Date.now()}-${Math.random().toString(36).slice(2)}` });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filters)); renderSaved();
-      });
-      renderSaved(); load();
+      load();
     })();
   </script>
 </body>
