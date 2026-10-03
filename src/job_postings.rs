@@ -436,13 +436,9 @@ fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &
         query
             .push(" AND (title ILIKE ")
             .push_bind(pattern.clone())
-            .push(" OR company ILIKE ")
-            .push_bind(pattern.clone())
             .push(" OR COALESCE(department, '') ILIKE ")
             .push_bind(pattern.clone())
             .push(" OR COALESCE(team, '') ILIKE ")
-            .push_bind(pattern.clone())
-            .push(" OR LEFT(COALESCE(description_text, description, ''), 4000) ILIKE ")
             .push_bind(pattern)
             .push(")");
     }
@@ -573,6 +569,33 @@ pub(crate) async fn list(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sqlx::Execute;
+
+    #[test]
+    fn role_filter_searches_role_metadata_not_description_or_company() {
+        let filters = ListingQuery {
+            page: None,
+            page_size: None,
+            role: Some("intern".into()),
+            location: None,
+            workplace: None,
+            employment: None,
+            department: None,
+            posted_after: None,
+            posted_before: None,
+            salary_min: None,
+            salary_max: None,
+            currency: None,
+        };
+        let mut query = QueryBuilder::<Postgres>::new("SELECT * FROM job_postings");
+        append_listing_filters(&mut query, &filters);
+        let sql = query.build().sql().to_owned();
+        assert!(sql.contains("title ILIKE"));
+        assert!(sql.contains("COALESCE(department, '') ILIKE"));
+        assert!(sql.contains("COALESCE(team, '') ILIKE"));
+        assert!(!sql.contains("description"));
+        assert!(!sql.contains("company ILIKE"));
+    }
 
     #[test]
     fn maps_real_ats_date_salary_locations_and_categories() {

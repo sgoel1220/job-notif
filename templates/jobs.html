@@ -106,6 +106,7 @@
       const pageStatus = document.querySelector("#page-status");
       const previousPage = document.querySelector("#previous-page");
       const nextPage = document.querySelector("#next-page");
+      let activeRequest;
 
       const stripHtml = value => new DOMParser().parseFromString(value || "", "text/html").body.textContent || "";
       const parsedDate = value => value ? Date.parse(value) : NaN;
@@ -157,6 +158,9 @@
         }
       }
       async function load() {
+        activeRequest?.abort();
+        activeRequest = new AbortController();
+        const { signal } = activeRequest;
         count.textContent = "Loading open roles…";
         const params = new URLSearchParams({ page: String(page), page_size: pageSize.value });
         const filterNames = { role: "role", location: "location", workplace: "workplace" };
@@ -165,13 +169,14 @@
           if (value) params.set(name, value);
         }
         try {
-          const response = await fetch(`/api/job-postings?${params}`);
+          const response = await fetch(`/api/job-postings?${params}`, { signal });
           if (!response.ok) throw new Error(`Request failed (${response.status})`);
           const result = await response.json();
           jobs = result.jobs;
           total = result.total;
           render();
         } catch (error) {
+          if (error.name === "AbortError") return;
           count.textContent = `Could not load listings: ${error.message}`;
           body.replaceChildren();
         }
