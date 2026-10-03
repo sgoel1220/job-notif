@@ -639,12 +639,16 @@ pub(crate) struct StoredJobPosting {
     pub(crate) salary_interval: Option<String>,
     pub(crate) url: String,
     pub(crate) is_active: bool,
+    pub(crate) role_category: String,
+    pub(crate) country_codes: Vec<String>,
 }
 
 #[derive(Clone, Deserialize)]
 pub(crate) struct ListingQuery {
     page: Option<u64>,
     page_size: Option<u64>,
+    role_category: Option<String>,
+    country: Option<String>,
     role: Option<String>,
     location: Option<String>,
     workplace: Option<String>,
@@ -673,6 +677,18 @@ pub(crate) const MAX_PAGE_SIZE: u64 = 100;
 
 fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &'a ListingQuery) {
     query.push(" WHERE is_active = TRUE");
+    if let Some(category) = filters.role_category.as_deref().filter(|v| !v.is_empty()) {
+        query.push(" AND role_category = ").push_bind(category);
+    }
+    if let Some(country) = filters.country.as_deref().filter(|v| !v.is_empty()) {
+        query
+            .push(" AND (country_codes @> ")
+            .push_bind(vec![country.to_owned()]);
+        if filters.include_global.unwrap_or(false) {
+            query.push(" OR EXISTS (SELECT 1 FROM unnest(string_to_array(COALESCE(location, ''), ';')) AS location_part(value) WHERE LOWER(BTRIM(location_part.value)) IN ('remote', 'worldwide', 'anywhere', 'global'))");
+        }
+        query.push(")");
+    }
     if let Some(value) = filters
         .role
         .as_deref()
@@ -690,7 +706,16 @@ fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &
             if normalized.is_empty() {
                 continue;
             }
-            if normalized == "frontend" {
+            if matches!(
+                normalized,
+                "intern" | "interns" | "internship" | "internships"
+            ) {
+                // An explicit word family, not a prefix: "intern*" also matches
+                // "internal", "international", and "internet".
+                query
+                    .push(" AND title ~* ")
+                    .push_bind(r"\m(intern|interns|internship|internships)\M");
+            } else if normalized == "frontend" {
                 query.push(" AND (title ILIKE '%frontend%' OR title ILIKE '%front-end%' OR title ILIKE '%front end%')");
             } else {
                 query
@@ -823,6 +848,22 @@ fn append_listing_filters<'a>(query: &mut QueryBuilder<'a, Postgres>, filters: &
 }
 
 fn validate_salary_filters(filters: &ListingQuery) -> Result<(), ApiError> {
+    if filters
+        .role_category
+        .as_deref()
+        .is_some_and(|value| !["", "intern", "sde-1", "sde-2", "other"].contains(&value))
+    {
+        return Err(ApiError::bad_request(
+            "Unsupported role_category; use intern, sde-1, sde-2, or other.",
+        ));
+    }
+    if filters
+        .country
+        .as_deref()
+        .is_some_and(|value| !["", "US", "IN"].contains(&value))
+    {
+        return Err(ApiError::bad_request("Unsupported country; use US or IN."));
+    }
     let has_numeric = filters.salary_min.is_some() || filters.salary_max.is_some();
     let currency = filters
         .currency
@@ -883,7 +924,8 @@ pub(crate) async fn list(
         "SELECT id, title, company, location, workplace_type, employment_type,
          department, team, LEFT(description, 2000) AS description,
          LEFT(description_text, 2000) AS description_text, posted_at, salary_min,
-         salary_max, salary_currency, salary_interval, url, is_active FROM job_postings",
+         salary_max, salary_currency, salary_interval, url, is_active,
+         role_category, country_codes FROM job_postings",
     );
     append_listing_filters(&mut rows_query, &filters);
     rows_query
@@ -914,6 +956,8 @@ mod tests {
         ListingQuery {
             page: None,
             page_size: None,
+            role_category: None,
+            country: None,
             role: None,
             location: None,
             workplace: None,
@@ -948,6 +992,8 @@ mod tests {
         let filters = ListingQuery {
             page: None,
             page_size: None,
+            role_category: None,
+            country: None,
             role: Some("intern".into()),
             location: None,
             workplace: None,
@@ -965,7 +1011,7 @@ mod tests {
         let mut query = QueryBuilder::<Postgres>::new("SELECT * FROM job_postings");
         append_listing_filters(&mut query, &filters);
         let sql = query.build().sql().to_owned();
-        assert!(sql.contains("title ILIKE"));
+        assert!(sql.contains("title ~*"));
         assert!(!sql.contains("department"));
         assert!(!sql.contains("team"));
         assert!(!sql.contains("description"));
@@ -977,6 +1023,8 @@ mod tests {
         let filters = ListingQuery {
             page: None,
             page_size: None,
+            role_category: None,
+            country: None,
             role: Some("software engineer".into()),
             location: None,
             workplace: None,
@@ -1013,6 +1061,8 @@ mod tests {
         let filters = ListingQuery {
             page: None,
             page_size: None,
+            role_category: None,
+            country: None,
             role: None,
             location: Some("India".into()),
             workplace: Some("remote".into()),
@@ -1063,6 +1113,253 @@ mod tests {
         assert!(validate_salary_filters(&query).is_ok());
         query.salary_min = Some(f64::INFINITY);
         assert!(validate_salary_filters(&query).is_err());
+    }
+
+    #[test]
+    fn category_filters_reject_unsupported_values() {
+        for role in ["sde-3", "intern%", "Intern"] {
+            let filters = ListingQuery {
+                role_category: Some(role.into()),
+                ..empty_filters()
+            };
+            assert!(validate_salary_filters(&filters).is_err());
+        }
+        for country in ["USA", "India", "us", "GB"] {
+            let filters = ListingQuery {
+                country: Some(country.into()),
+                ..empty_filters()
+            };
+            assert!(validate_salary_filters(&filters).is_err());
+        }
+    }
+
+    #[tokio::test]
+    async fn category_migration_backfills_and_reclassifies_jobs_on_update() {
+        let db = crate::test_database().await;
+        // Recreate the pre-migration shape to verify backfill, not only new inserts.
+        sqlx::raw_sql("ALTER TABLE job_postings DROP COLUMN role_category, DROP COLUMN country_codes; DROP FUNCTION job_role_category(TEXT, TEXT); DROP FUNCTION job_country_codes(TEXT);")
+            .execute(&db).await.unwrap();
+        sqlx::query("INSERT INTO job_postings (source, source_job_id, title, company, location, url) VALUES ('test', 'old', 'Software Engineer Intern', 'Example', 'Bengaluru', 'https://example.com')")
+            .execute(&db).await.unwrap();
+        sqlx::raw_sql(include_str!("../migrations/0004_job_categories.sql"))
+            .execute(&db)
+            .await
+            .unwrap();
+        let filters = ListingQuery {
+            role_category: Some("intern".into()),
+            country: Some("IN".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &filters).await, 1);
+        sqlx::query("UPDATE job_postings SET title = 'Software Engineer II', location = 'United States' WHERE source_job_id = 'old'")
+            .execute(&db).await.unwrap();
+        assert_eq!(matching_count(&db, &filters).await, 0);
+        let filters = ListingQuery {
+            role_category: Some("sde-2".into()),
+            country: Some("US".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &filters).await, 1);
+    }
+
+    #[tokio::test]
+    async fn database_category_rules_are_conservative_and_exact() {
+        let db = crate::test_database().await;
+        let fixtures = [
+            (
+                "Software Engineer Intern",
+                None,
+                "India",
+                "intern",
+                vec!["IN"],
+            ),
+            ("Summer Internship", None, "US", "intern", vec!["US"]),
+            (
+                "Software Engineer",
+                Some("Internship"),
+                "USA",
+                "intern",
+                vec!["US"],
+            ),
+            ("Internal Auditor", None, "London", "other", vec![]),
+            ("International Sales", None, "Worldwide", "other", vec![]),
+            ("Internet Engineer", None, "Remote", "other", vec![]),
+            (
+                "Software Engineer I",
+                None,
+                "Bengaluru",
+                "sde-1",
+                vec!["IN"],
+            ),
+            (
+                "Software Development Engineer 1",
+                None,
+                "New Delhi",
+                "sde-1",
+                vec!["IN"],
+            ),
+            ("SDE-1", None, "U.S.A.", "sde-1", vec!["US"]),
+            ("SDE1", None, "San Francisco", "sde-1", vec!["US"]),
+            (
+                "Junior Software Developer",
+                None,
+                "Seattle",
+                "sde-1",
+                vec!["US"],
+            ),
+            (
+                "Software Engineer, New Graduate",
+                None,
+                "Mumbai, India",
+                "sde-1",
+                vec!["IN"],
+            ),
+            (
+                "Software Engineer II",
+                None,
+                "United States of America",
+                "sde-2",
+                vec!["US"],
+            ),
+            (
+                "Software Development Engineer 2",
+                None,
+                "USA; India",
+                "sde-2",
+                vec!["US", "IN"],
+            ),
+            ("SDE2", None, "United States", "sde-2", vec!["US"]),
+            ("SDE-2", None, "U.S.", "sde-2", vec!["US"]),
+            (
+                "Mid-level Software Engineer",
+                None,
+                "Hyderabad",
+                "sde-2",
+                vec!["IN"],
+            ),
+            (
+                "Software Engineer, Level II",
+                None,
+                "Pune",
+                "sde-2",
+                vec!["IN"],
+            ),
+            (
+                "Senior Software Engineer II",
+                None,
+                "Indiana, US",
+                "other",
+                vec!["US"],
+            ),
+            ("SDE-10", None, "Indianapolis", "other", vec![]),
+            ("Software Engineer III", None, "Australia", "other", vec![]),
+            ("Software Engineer", None, "Remote", "other", vec![]),
+            ("Junior Accountant", None, "Canada", "other", vec![]),
+        ];
+        for (index, (title, employment, location, expected_role, expected_countries)) in
+            fixtures.iter().enumerate()
+        {
+            let (role, countries): (String, Vec<String>) = sqlx::query_as("INSERT INTO job_postings (source, source_job_id, title, company, employment_type, location, url) VALUES ('test', $1, $2, 'Example', $3, $4, 'https://example.com') RETURNING role_category, country_codes")
+                .bind(index.to_string()).bind(title).bind(employment).bind(location)
+                .fetch_one(&db).await.unwrap();
+            assert_eq!(role, *expected_role, "title={title}");
+            assert_eq!(countries, *expected_countries, "location={location}");
+        }
+        for role in ["intern", "sde-1", "sde-2", "other"] {
+            for country in [None, Some("US"), Some("IN")] {
+                let expected = fixtures
+                    .iter()
+                    .filter(|(_, _, _, category, countries)| {
+                        *category == role && country.is_none_or(|c| countries.contains(&c))
+                    })
+                    .count() as i64;
+                let filters = ListingQuery {
+                    role_category: Some(role.into()),
+                    country: country.map(str::to_owned),
+                    ..empty_filters()
+                };
+                assert_eq!(
+                    matching_count(&db, &filters).await,
+                    expected,
+                    "role={role}, country={country:?}"
+                );
+            }
+        }
+        let filters = ListingQuery {
+            country: Some("IN".into()),
+            ..empty_filters()
+        };
+        let strict = matching_count(&db, &filters).await;
+        let inclusive = ListingQuery {
+            include_global: Some(true),
+            ..filters.clone()
+        };
+        assert_eq!(matching_count(&db, &inclusive).await, strict + 3);
+        sqlx::query(
+            "UPDATE job_postings SET is_active = FALSE WHERE title = 'Software Engineer Intern'",
+        )
+        .execute(&db)
+        .await
+        .unwrap();
+        let filters = ListingQuery {
+            role_category: Some("intern".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &filters).await, 2);
+    }
+
+    #[tokio::test]
+    async fn intern_search_matches_whole_word_family_not_unrelated_prefixes() {
+        let db = crate::test_database().await;
+        let titles = [
+            "Software Engineer Intern",
+            "INTERN — Product",
+            "Summer Internship",
+            "Engineering Internships",
+            "Design Interns",
+            "Software Engineer (Intern)",
+            "Software Engineer - Intern/Co-op",
+            "Internal Auditor",
+            "International Sales",
+            "Internet Engineer",
+            "Software Engineer",
+            "InternshipCoordinator",
+            "Winterintern",
+        ];
+        for (index, title) in titles.iter().enumerate() {
+            sqlx::query("INSERT INTO job_postings (source, source_job_id, title, company, url, is_active, description_text) VALUES ('test', $1, $2, 'Intern Company', 'https://example.com', TRUE, 'intern internship')")
+                .bind(index.to_string())
+                .bind(title)
+                .execute(&db)
+                .await
+                .unwrap();
+        }
+        for role in ["intern", "INTERN", "interns", "internship", "internships"] {
+            let filters = ListingQuery {
+                role: Some(role.into()),
+                ..empty_filters()
+            };
+            assert_eq!(matching_count(&db, &filters).await, 7, "role={role}");
+        }
+        let filters = ListingQuery {
+            role: Some("software intern".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &filters).await, 3);
+        let filters = ListingQuery {
+            role: Some("internal".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &filters).await, 1);
+        sqlx::query("UPDATE job_postings SET is_active = FALSE WHERE title = 'Summer Internship'")
+            .execute(&db)
+            .await
+            .unwrap();
+        let filters = ListingQuery {
+            role: Some("intern".into()),
+            ..empty_filters()
+        };
+        assert_eq!(matching_count(&db, &filters).await, 6);
     }
 
     #[tokio::test]

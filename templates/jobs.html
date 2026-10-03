@@ -25,6 +25,7 @@
     .filters input,.filters select { width: 100%; min-height: 32px; padding: 5px 7px; border: 1px solid #ccc; border-radius: 3px; background: #fff; color: #222; font: inherit; }
     .salary-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .filter-actions { display: flex; align-items: end; gap: 6px; }
+    .filter-note { margin: 0 0 12px; color: #666; font-size: 12px; }
     .filter-options { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 12px; color: #555; font-size: 12px; }
     .filter-options label { display: flex; align-items: center; gap: 5px; }
     .filter-options input { margin: 0; }
@@ -73,11 +74,12 @@
       <button class="refresh" type="button" id="refresh">⟳ Refresh</button>
     </div>
     <form class="filters" id="filter-form">
-      <label>Job title or keyword<input id="role-filter" type="search" placeholder="e.g. product designer" autocomplete="off"></label>
-      <label>Location<input id="location-filter" type="search" placeholder="e.g. India" autocomplete="off"></label>
+      <label>Role<select id="role-filter"><option value="">All roles</option><option value="intern">Intern</option><option value="sde-1">SDE-1</option><option value="sde-2">SDE-2</option><option value="other">Other / unclassified</option></select></label>
+      <label>Country<select id="location-filter"><option value="">All countries</option><option value="US">USA</option><option value="IN">India</option></select></label>
       <label>Work arrangement<select id="workplace-filter"><option value="">Any arrangement</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option><option value="unknown">Not specified</option></select></label>
       <div class="filter-actions"><button type="reset">Clear filters</button></div>
     </form>
+    <p class="filter-note">SDE levels are mapped only from explicit title levels or junior/mid-level titles; unknown levels remain under All roles / Other. Country labels are not an eligibility guarantee.</p>
     <div class="filter-options">
       <label><input id="include-global" type="checkbox"> Include generic Remote/Worldwide/Anywhere/Global labels (eligibility unverified)</label>
       <label><input id="include-unknown-workplace" type="checkbox"> Include listings with unspecified arrangement</label>
@@ -115,6 +117,7 @@
       const nextPage = document.querySelector("#next-page");
       let activeRequest;
 
+      const categoryLabels = { intern: "Intern", "sde-1": "SDE-1", "sde-2": "SDE-2", other: "Other / unclassified" };
       const stripHtml = value => new DOMParser().parseFromString(value || "", "text/html").body.textContent || "";
       const parsedDate = value => value ? Date.parse(value) : NaN;
       const money = value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -150,7 +153,7 @@
           const role = document.createElement("td"); role.className = "role";
           const link = document.createElement("a"); link.href = job.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = job.title;
           role.append(link);
-          const meta = [job.employment_type, job.department, job.team].filter(Boolean).join(" · ");
+          const meta = [categoryLabels[job.role_category], job.employment_type, job.department, job.team].filter(Boolean).join(" · ");
           if (meta) { const small = document.createElement("small"); small.className = "role-meta"; small.textContent = meta; role.append(small); }
           const summary = stripHtml(job.description_text || job.description || "").replace(/\s+/g, " ").trim();
           if (summary) { const small = document.createElement("small"); small.className = "description"; small.textContent = summary.slice(0, 220) + (summary.length > 220 ? "…" : ""); role.append(small); }
@@ -172,7 +175,7 @@
         const params = new URLSearchParams({ page: String(page), page_size: pageSize.value });
         if (document.querySelector("#include-global").checked) params.set("include_global", "true");
         if (document.querySelector("#include-unknown-workplace").checked) params.set("include_unknown_workplace", "true");
-        const filterNames = { role: "role", location: "location", workplace: "workplace" };
+        const filterNames = { role: "role_category", location: "country", workplace: "workplace" };
         for (const [key, name] of Object.entries(filterNames)) {
           const value = fields[key].value.trim();
           if (value) params.set(name, value);
@@ -195,15 +198,14 @@
           body.replaceChildren();
         }
       }
-      let filterTimer;
-      fields.role.addEventListener("input", () => { clearTimeout(filterTimer); filterTimer = setTimeout(() => { page = 1; load(); }, 250); });
-      fields.location.addEventListener("input", () => { clearTimeout(filterTimer); filterTimer = setTimeout(() => { page = 1; load(); }, 250); });
+      fields.role.addEventListener("change", () => { page = 1; load(); });
+      fields.location.addEventListener("change", () => { page = 1; load(); });
       fields.workplace.addEventListener("change", () => { page = 1; load(); });
       document.querySelector("#include-global").addEventListener("change", () => { page = 1; load(); });
       document.querySelector("#include-unknown-workplace").addEventListener("change", () => { page = 1; load(); });
       form.addEventListener("submit", event => event.preventDefault());
       form.addEventListener("reset", () => {
-        clearTimeout(filterTimer); page = 1;
+        page = 1;
         document.querySelector("#include-global").checked = false;
         document.querySelector("#include-unknown-workplace").checked = false;
         requestAnimationFrame(load);

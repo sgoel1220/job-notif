@@ -11,7 +11,9 @@ HTML = (Path(__file__).parents[1] / "templates/jobs.html").read_text()
 
 def job(number):
     return {"id": number, "title": f"Engineer {number}", "company": "Example",
-            "location": "Bengaluru", "url": "https://example.test/job", "workplace_type": None}
+            "location": "Bengaluru", "url": "https://example.test/job", "workplace_type": None,
+            "role_category": ["intern", "sde-1", "sde-2", "other"][number % 4],
+            "country_codes": ["IN"]}
 
 
 class ListingsUI(unittest.TestCase):
@@ -65,22 +67,89 @@ class ListingsUI(unittest.TestCase):
         self.assertTrue(self.page.locator("#next-page").is_disabled())
 
     def test_inclusive_filters_are_explicit_and_clear_resets_them(self):
-        self.page.fill("#location-filter", "India")
-        self.page.check("#include-global")
-        self.page.check("#include-unknown-workplace")
+        self.select_filter("#location-filter", "IN")
+        self.select_filter("#role-filter", "sde-1")
+        self.select_filter("#workplace-filter", "remote")
+        with self.page.expect_response("**/api/job-postings?*"):
+            self.page.check("#include-global")
+        with self.page.expect_response("**/api/job-postings?*"):
+            self.page.check("#include-unknown-workplace")
         self.page.wait_for_function("document.querySelector('#result-count').textContent === '60 open roles'")
-        self.page.wait_for_timeout(350)
         self.assertEqual(self.requests[-1]["include_global"], ["true"])
         self.assertEqual(self.requests[-1]["include_unknown_workplace"], ["true"])
         self.assertIn("eligibility unverified", self.page.locator(".filter-options").inner_text())
         self.assertIn("Not specified", self.page.locator("#listings-body").inner_text())
-        self.page.click("button[type=reset]")
+        with self.page.expect_response("**/api/job-postings?*"):
+            self.page.click("button[type=reset]")
         self.page.wait_for_function("document.querySelector('#location-filter').value === ''")
         self.page.wait_for_function("document.querySelector('#result-count').textContent === '60 open roles'")
         self.assertFalse(self.page.locator("#include-global").is_checked())
         self.assertFalse(self.page.locator("#include-unknown-workplace").is_checked())
         self.assertNotIn("include_global", self.requests[-1])
         self.assertNotIn("include_unknown_workplace", self.requests[-1])
+        self.assertEqual(self.requests[-1], {"page": ["1"], "page_size": ["25"]})
+        self.assertEqual(self.page.locator("#role-filter").input_value(), "")
+        self.assertEqual(self.page.locator("#workplace-filter").input_value(), "")
+
+    def select_filter(self, selector, value):
+        with self.page.expect_response("**/api/job-postings?*"):
+            self.page.select_option(selector, value)
+        self.page.wait_for_function("document.querySelector('#result-count').textContent === '60 open roles'")
+
+    def test_role_and_country_options_send_exact_params(self):
+        self.assertEqual(self.page.locator("#role-filter option").all_text_contents(),
+                         ["All roles", "Intern", "SDE-1", "SDE-2", "Other / unclassified"])
+        self.assertEqual(self.page.locator("#location-filter option").all_text_contents(),
+                         ["All countries", "USA", "India"])
+        for role in ["intern", "sde-1", "sde-2", "other", ""]:
+            self.select_filter("#role-filter", role)
+            for country in ["US", "IN", ""]:
+                self.select_filter("#location-filter", country)
+                expected = {"page": ["1"], "page_size": ["25"]}
+                if role:
+                    expected["role_category"] = [role]
+                if country:
+                    expected["country"] = [country]
+                self.assertEqual(self.requests[-1], expected)
+
+    def test_dropdown_changes_load_immediately_and_reset_page(self):
+        self.page.evaluate("""() => {
+            const fetch = window.fetch;
+            window.filterFetches = [];
+            window.fetch = (...args) => {
+                window.filterFetches.push(args[0]);
+                return fetch(...args);
+            };
+        }""")
+        for selector, value, param in [("#role-filter", "sde-2", "role_category"),
+                                       ("#location-filter", "US", "country")]:
+            self.page.click("#next-page")
+            self.page.wait_for_function("document.querySelector('#page-status').textContent.includes('Page 2 of 3')")
+            with self.page.expect_response("**/api/job-postings?*"):
+                urls = self.page.evaluate("""({selector, value}) => {
+                    window.filterFetches = [];
+                    const select = document.querySelector(selector);
+                    select.value = value;
+                    select.dispatchEvent(new Event('change', {bubbles: true}));
+                    return window.filterFetches.slice();
+                }""", {"selector": selector, "value": value})
+            self.assertEqual(len(urls), 1, "Change must fetch synchronously, without debounce")
+            params = parse_qs(urlparse(urls[0]).query)
+            self.assertEqual(params["page"], ["1"])
+            self.assertEqual(params[param], [value])
+            self.page.wait_for_function("document.querySelector('#page-status').textContent.includes('Page 1 of 3')")
+
+    def test_category_labels_preserve_title_location_and_metadata(self):
+        for index, label in enumerate(["Intern", "SDE-1", "SDE-2", "Other / unclassified"]):
+            row = self.page.locator("#listings-body tr").nth(index)
+            self.assertEqual(row.locator(".role-meta").inner_text(), label)
+            self.assertEqual(row.locator(".role a").inner_text(), f"Engineer {index}")
+            self.assertEqual(row.locator(".location").inner_text(), "Bengaluru")
+        note = self.page.locator(".filter-note").inner_text()
+        self.assertIn("explicit title levels", note)
+        self.assertIn("junior/mid-level", note)
+        self.assertIn("unknown levels", note)
+        self.assertIn("not an eligibility guarantee", note)
 
     def test_shrink_to_zero_shows_empty_result_not_stale_page(self):
         self.page.click("#next-page")
