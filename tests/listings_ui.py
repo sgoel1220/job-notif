@@ -31,6 +31,7 @@ class ListingsUI(unittest.TestCase):
         self.page = self.browser.new_page()
         self.total = 60
         self.requests = []
+        self.job_url = "https://example.test/job"
 
         def serve(route):
             url = urlparse(route.request.url)
@@ -41,6 +42,8 @@ class ListingsUI(unittest.TestCase):
                 size = int(params["page_size"][0])
                 start = (page - 1) * size
                 jobs = [job(i) for i in range(start, min(start + size, self.total))]
+                for listing in jobs:
+                    listing["url"] = self.job_url
                 route.fulfill(content_type="application/json", body=json.dumps({
                     "jobs": jobs, "total": self.total, "page": page, "page_size": size}))
             else:
@@ -52,6 +55,37 @@ class ListingsUI(unittest.TestCase):
 
     def tearDown(self):
         self.page.close()
+
+    def test_ignores_stale_response_even_when_fetch_ignores_abort(self):
+        self.page.evaluate("""() => {
+            window.pendingResponses = [];
+            window.fetch = () => new Promise(resolve => window.pendingResponses.push(resolve));
+        }""")
+        self.page.click("#refresh")
+        self.page.click("#refresh")
+        self.page.wait_for_function("window.pendingResponses.length === 2")
+        self.page.evaluate("""() => {
+            const makeResponse = title => ({ok: true, json: async () => ({
+                jobs: [{id: 1, title, company: 'Example', url: 'https://example.test/job'}], total: 1
+            })});
+            window.pendingResponses[1](makeResponse('Newest response'));
+            window.pendingResponses[0](makeResponse('Stale response'));
+        }""")
+        self.page.wait_for_function("document.querySelector('#listings-body').textContent.includes('Newest response')")
+        self.assertNotIn("Stale response", self.page.locator("#listings-body").inner_text())
+
+    def test_unsafe_job_url_protocols_are_not_links(self):
+        for url in ["javascript:alert(1)", "data:text/html,unsafe", "file:///etc/passwd", "", None]:
+            self.job_url = url
+            with self.page.expect_response("**/api/job-postings?*"):
+                self.page.click("#refresh")
+            self.page.wait_for_function("document.querySelector('#listings-body').textContent.includes('Engineer 0')")
+            self.assertEqual(self.page.locator("#listings-body a").count(), 0)
+            self.assertIn("Engineer 0", self.page.locator("#listings-body").inner_text())
+        self.job_url = "https://example.test/job"
+        with self.page.expect_response("**/api/job-postings?*"):
+            self.page.click("#refresh")
+        self.assertEqual(self.page.locator("#listings-body a").first.get_attribute("href"), "https://example.test/job")
 
     def test_shrinking_results_refetch_valid_page(self):
         self.page.click("#next-page")

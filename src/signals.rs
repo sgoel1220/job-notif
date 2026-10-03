@@ -217,8 +217,11 @@ fn parse_feed(xml: &str) -> Result<Vec<Job>, String> {
                         }
                     }
                     if rel.as_deref().is_none_or(|rel| rel == "alternate") {
-                        if let Some(href) = href.filter(|href| !href.trim().is_empty()) {
-                            current.as_mut().unwrap().url = http_link(&href, &base)?.into();
+                        if let (Some(job), Some(href)) = (
+                            current.as_mut(),
+                            href.filter(|href| !href.trim().is_empty()),
+                        ) {
+                            job.url = http_link(&href, &base)?.into();
                         }
                     }
                 } else if current.is_some()

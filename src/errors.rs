@@ -1,5 +1,6 @@
 use axum::{http::StatusCode, response::IntoResponse};
 
+#[derive(Debug)]
 pub(crate) struct ApiError(pub(crate) StatusCode, pub(crate) String);
 
 impl ApiError {

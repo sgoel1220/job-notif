@@ -120,6 +120,13 @@
       const categoryLabels = { intern: "Software intern", "sde-1": "SDE-1", "sde-2": "SDE-2", other: "Others" };
       const stripHtml = value => new DOMParser().parseFromString(value || "", "text/html").body.textContent || "";
       const parsedDate = value => value ? Date.parse(value) : NaN;
+      const safeJobUrl = value => {
+        if (typeof value !== "string" || !value.trim()) return null;
+        try {
+          const url = new URL(value, window.location.href);
+          return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+        } catch { return null; }
+      };
       const money = value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
       const salaryText = job => {
         if (job.salary_min == null && job.salary_max == null) return "Not listed";
@@ -151,8 +158,13 @@
         for (const job of jobs) {
           const row = document.createElement("tr");
           const role = document.createElement("td"); role.className = "role";
-          const link = document.createElement("a"); link.href = job.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = job.title;
-          role.append(link);
+          const linkUrl = safeJobUrl(job.url);
+          if (linkUrl) {
+            const link = document.createElement("a"); link.href = linkUrl; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = job.title;
+            role.append(link);
+          } else {
+            role.textContent = job.title;
+          }
           const category = categoryLabels[job.role_category];
           const meta = [category, job.employment_type, job.department, job.team].filter(Boolean).join(" · ");
           if (meta) { const small = document.createElement("small"); small.className = "role-meta"; small.textContent = meta; role.append(small); }
@@ -171,7 +183,8 @@
       async function load() {
         activeRequest?.abort();
         activeRequest = new AbortController();
-        const { signal } = activeRequest;
+        const request = activeRequest;
+        const { signal } = request;
         count.textContent = "Loading open roles…";
         const params = new URLSearchParams({ page: String(page), page_size: pageSize.value });
         if (document.querySelector("#include-global").checked) params.set("include_global", "true");
@@ -185,6 +198,7 @@
           const response = await fetch(`/api/job-postings?${params}`, { signal });
           if (!response.ok) throw new Error(`Request failed (${response.status})`);
           const result = await response.json();
+          if (activeRequest !== request) return;
           const pageCount = Math.max(1, Math.ceil(result.total / Number(pageSize.value)));
           if (page > pageCount) {
             page = pageCount;
@@ -194,7 +208,7 @@
           total = result.total;
           render();
         } catch (error) {
-          if (error.name === "AbortError") return;
+          if (activeRequest !== request || error.name === "AbortError") return;
           count.textContent = `Could not load listings: ${error.message}`;
           body.replaceChildren();
         }
