@@ -1,0 +1,8 @@
+.env
+.git
+.gitignore
+/target
+/job-notif.db
+/job-notif.db-shm
+/job-notif.db-wal
+/server.log

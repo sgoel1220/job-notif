@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5f1">
+  <title>Remote roles — Jobboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: #222; font: 14px/1.45 Arial, Helvetica, sans-serif; }
+    .wrap { width: 94%; max-width: 1200px; margin: 0 auto; }
+    header { padding: 12px 0; border-bottom: 1px solid #ccc; background: #f5f5f5; }
+    .brand { font-size: 16px; font-weight: bold; }
+    .mark { margin-right: 6px; color: #337ab7; }
+    main { padding: 28px 0 50px; }
+    .eyebrow { color: #777; font-size: 12px; text-transform: uppercase; }
+    h1 { margin: 8px 0; font-size: 30px; }
+    .intro { margin: 0; color: #666; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0 12px; }
+    .count { color: #666; }
+    .refresh,.filter-actions button,.saved-filters button { padding: 6px 10px; border: 1px solid #ccc; border-radius: 3px; background: #f5f5f5; color: #333; font: inherit; cursor: pointer; }
+    .refresh:hover,.filter-actions button:hover,.saved-filters button:hover { background: #e6e6e6; }
+    .filters { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 16px 0 12px; padding: 14px; border: 1px solid #ccc; background: #f9f9f9; }
+    .filters label { display: grid; align-content: start; gap: 4px; color: #444; font-size: 12px; font-weight: bold; }
+    .filters input,.filters select { width: 100%; min-height: 32px; padding: 5px 7px; border: 1px solid #ccc; border-radius: 3px; background: #fff; color: #222; font: inherit; }
+    .salary-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .filter-actions { display: flex; align-items: end; gap: 6px; }
+    .saved-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; color: #555; }
+    .saved-filters { display: flex; flex-wrap: wrap; gap: 5px; }
+    .saved-filters button { padding: 4px 8px; }
+    .saved-filters .remove { min-width: 26px; margin-left: 3px; }
+    .table-card { overflow: hidden; border: 1px solid #ccc; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; min-width: 1000px; border-collapse: collapse; text-align: left; }
+    th { padding: 9px 10px; border-bottom: 2px solid #ddd; background: #f5f5f5; color: #333; font-size: 12px; }
+    td { padding: 10px; border-top: 1px solid #ddd; vertical-align: top; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+    .role a { color: #337ab7; font-weight: bold; text-decoration: none; }
+    .role a:hover { color: #23527c; text-decoration: underline; }
+    .company { color: #444; }
+    .location { color: #555; }
+    .role-meta,.description { display: block; margin-top: 4px; color: #666; font-size: 12px; font-weight: normal; }
+    .description { max-width: 440px; }
+    .badge { display: inline-block; padding: 2px 5px; border: 1px solid #ccc; border-radius: 3px; background: #f5f5f5; color: #333; font-size: 11px; white-space: nowrap; }
+    .salary,.posted { white-space: nowrap; font-size: 13px; }
+    .empty { padding: 40px 15px; color: #666; text-align: center; }
+    footer { margin-top: 14px; color: #777; font-size: 12px; }
+    @media(max-width:900px) { .filters { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+    @media(max-width:600px) {
+      .wrap { width: 96%; } main { padding-top: 20px; }
+      .filters { grid-template-columns: 1fr; }
+      .filter-actions { flex-wrap: wrap; }
+      .filter-actions button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <header><div class="wrap brand"><span class="mark">↗</span> work, anywhere</div></header>
+  <main class="wrap">
+    <div class="eyebrow">Curated opportunities</div>
+    <h1>International remote jobs</h1>
+    <p class="intro">Find your next role, wherever you do your best work.</p>
+    <div class="toolbar">
+      <span class="count" id="result-count">Loading open roles…</span>
+      <button class="refresh" type="button" id="refresh">⟳ Refresh</button>
+    </div>
+    <form class="filters" id="filter-form">
+      <label>Title / keywords<input id="role-filter" type="search" placeholder="e.g. software developer"></label>
+      <label>Location / eligibility<input id="location-filter" type="search" placeholder="e.g. India"></label>
+      <label>Work arrangement<select id="workplace-filter"><option value="">Any arrangement</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></select></label>
+      <label>Employment type<input id="employment-filter" type="search" placeholder="e.g. full-time"></label>
+      <label>Department / team<input id="department-filter" type="search" placeholder="e.g. engineering"></label>
+      <label>Posted date<input id="posted-after-filter" type="date" aria-label="Posted on or after"></label>
+      <label>Posted through<input id="posted-before-filter" type="date" aria-label="Posted on or before"></label>
+      <label>Salary range (source currency)
+        <span class="salary-pair"><input id="salary-min-filter" type="number" min="0" step="any" placeholder="Min" aria-label="Minimum salary"><input id="salary-max-filter" type="number" min="0" step="any" placeholder="Max" aria-label="Maximum salary"></span>
+      </label>
+      <label>Currency<input id="currency-filter" type="search" placeholder="e.g. USD"></label>
+      <div class="filter-actions"><button type="submit">Apply filters</button><button type="button" id="save-filter">Save filter</button><button type="reset">Clear</button></div>
+    </form>
+    <div class="saved-row"><strong>Saved filters:</strong><div class="saved-filters" id="saved-filters"><span>No saved filters yet.</span></div></div>
+    <section class="table-card" aria-label="Job listings">
+      <div class="table-scroll"><table>
+        <thead><tr><th>Role &amp; details</th><th>Company</th><th>Location</th><th>Arrangement</th><th>Salary</th><th>Posted</th></tr></thead>
+        <tbody id="listings-body"><tr><td class="empty" colspan="6">Loading listings…</td></tr></tbody>
+      </table></div>
+    </section>
+    <footer>Salary and eligibility details are supplied by job sources; confirm them on the employer’s site. Saved filters stay in this browser.</footer>
+  </main>
+  <script>
+    (() => {
+      const STORAGE_KEY = "jobboard.saved-filters.v2";
+      const body = document.querySelector("#listings-body");
+      const count = document.querySelector("#result-count");
+      const form = document.querySelector("#filter-form");
+      const fields = {
+        role: document.querySelector("#role-filter"),
+        location: document.querySelector("#location-filter"),
+        workplace: document.querySelector("#workplace-filter"),
+        employment: document.querySelector("#employment-filter"),
+        department: document.querySelector("#department-filter"),
+        postedAfter: document.querySelector("#posted-after-filter"),
+        postedBefore: document.querySelector("#posted-before-filter"),
+        salaryMin: document.querySelector("#salary-min-filter"),
+        salaryMax: document.querySelector("#salary-max-filter"),
+        currency: document.querySelector("#currency-filter"),
+      };
+      const savedRoot = document.querySelector("#saved-filters");
+      let jobs = [];
+
+      const savedFilters = () => {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+        catch { return []; }
+      };
+      const currentFilter = () => Object.fromEntries(Object.entries(fields).map(([key, input]) => [key, input.value.trim()]));
+      const setFilter = filter => {
+        for (const [key, input] of Object.entries(fields)) input.value = filter[key] || "";
+        render();
+      };
+      const includes = (value, query) => !query || (value || "").toLocaleLowerCase().includes(query.toLocaleLowerCase());
+      const normalizeWorkplace = value => (value || "").toLocaleLowerCase().replace(/[^a-z]/g, "");
+      const stripHtml = value => new DOMParser().parseFromString(value || "", "text/html").body.textContent || "";
+      const parsedDate = value => value ? Date.parse(value) : NaN;
+      const money = value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const salaryText = job => {
+        if (job.salary_min == null && job.salary_max == null) return "Not listed";
+        const currency = job.salary_currency ? `${job.salary_currency} ` : "";
+        const low = job.salary_min == null ? "?" : money(job.salary_min);
+        const high = job.salary_max == null ? "?" : money(job.salary_max);
+        return job.salary_min != null && job.salary_max != null && job.salary_min === job.salary_max
+          ? `${currency}${low}` : `${currency}${low}–${high}`;
+      };
+      const dateText = value => {
+        const date = parsedDate(value);
+        return Number.isNaN(date) ? "Not listed" : new Date(date).toLocaleDateString();
+      };
+      function matches(job, filter) {
+        if (!job.is_active) return false;
+        const description = stripHtml(job.description_text || job.description || "");
+        if (!includes(`${job.title} ${job.company} ${job.department || ""} ${job.team || ""} ${description}`, filter.role)) return false;
+        if (!includes(job.location, filter.location)) return false;
+        if (filter.workplace && !normalizeWorkplace(job.workplace_type).includes(filter.workplace)) return false;
+        if (!includes(job.employment_type, filter.employment)) return false;
+        if (!includes(`${job.department || ""} ${job.team || ""}`, filter.department)) return false;
+        const posted = parsedDate(job.posted_at);
+        if (filter.postedAfter && (Number.isNaN(posted) || posted < Date.parse(`${filter.postedAfter}T00:00:00Z`))) return false;
+        if (filter.postedBefore && (Number.isNaN(posted) || posted >= Date.parse(`${filter.postedBefore}T00:00:00Z`) + 86_400_000)) return false;
+        const minWanted = filter.salaryMin === "" ? null : Number(filter.salaryMin);
+        const maxWanted = filter.salaryMax === "" ? null : Number(filter.salaryMax);
+        if (minWanted != null || maxWanted != null) {
+          if (job.salary_min == null && job.salary_max == null) return false;
+          const jobLow = job.salary_min ?? job.salary_max;
+          const jobHigh = job.salary_max ?? job.salary_min;
+          if (minWanted != null && jobHigh < minWanted) return false;
+          if (maxWanted != null && jobLow > maxWanted) return false;
+        }
+        if (filter.currency && !includes(job.salary_currency, filter.currency)) return false;
+        return true;
+      }
+      function renderSaved() {
+        savedRoot.replaceChildren();
+        const filters = savedFilters();
+        if (!filters.length) { savedRoot.textContent = "No saved filters yet."; return; }
+        for (const item of filters) {
+          const group = document.createElement("span");
+          const apply = document.createElement("button");
+          apply.type = "button"; apply.textContent = item.name; apply.title = "Apply saved filter";
+          apply.addEventListener("click", () => setFilter(item));
+          const remove = document.createElement("button");
+          remove.type = "button"; remove.className = "remove"; remove.textContent = "×";
+          remove.setAttribute("aria-label", `Delete ${item.name}`); remove.title = "Delete saved filter";
+          remove.addEventListener("click", () => {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(savedFilters().filter(saved => saved.id !== item.id)));
+            renderSaved();
+          });
+          group.append(apply, remove); savedRoot.append(group);
+        }
+      }
+      function render() {
+        const filter = currentFilter();
+        const active = jobs.filter(job => job.is_active);
+        const visible = active.filter(job => matches(job, filter));
+        body.replaceChildren();
+        count.textContent = `${visible.length} of ${active.length} open roles`;
+        if (!visible.length) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td"); cell.className = "empty"; cell.colSpan = 6;
+          cell.textContent = jobs.length ? "No open roles match these filters." : "No listings yet. Check back soon for new opportunities.";
+          row.append(cell); body.append(row); return;
+        }
+        for (const job of visible) {
+          const row = document.createElement("tr");
+          const role = document.createElement("td"); role.className = "role";
+          const link = document.createElement("a"); link.href = job.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = job.title;
+          role.append(link);
+          const meta = [job.employment_type, job.department, job.team].filter(Boolean).join(" · ");
+          if (meta) { const small = document.createElement("small"); small.className = "role-meta"; small.textContent = meta; role.append(small); }
+          const summary = stripHtml(job.description_text || job.description || "").replace(/\s+/g, " ").trim();
+          if (summary) { const small = document.createElement("small"); small.className = "description"; small.textContent = summary.slice(0, 220) + (summary.length > 220 ? "…" : ""); role.append(small); }
+          const company = document.createElement("td"); company.className = "company"; company.textContent = job.company;
+          const location = document.createElement("td"); location.className = "location"; location.textContent = job.location || "Not listed";
+          const arrangement = document.createElement("td");
+          if (job.workplace_type) { const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = job.workplace_type; arrangement.append(badge); }
+          else arrangement.textContent = "Not listed";
+          const salary = document.createElement("td"); salary.className = "salary"; salary.textContent = salaryText(job);
+          const posted = document.createElement("td"); posted.className = "posted"; posted.textContent = dateText(job.posted_at);
+          row.append(role, company, location, arrangement, salary, posted); body.append(row);
+        }
+      }
+      async function load() {
+        count.textContent = "Loading open roles…";
+        try {
+          const response = await fetch("/api/job-postings");
+          if (!response.ok) throw new Error(`Request failed (${response.status})`);
+          jobs = await response.json(); render();
+        } catch (error) {
+          count.textContent = `Could not load listings: ${error.message}`;
+          body.replaceChildren();
+        }
+      }
+      form.addEventListener("submit", event => { event.preventDefault(); render(); });
+      form.addEventListener("reset", () => requestAnimationFrame(render));
+      document.querySelector("#refresh").addEventListener("click", load);
+      document.querySelector("#save-filter").addEventListener("click", () => {
+        const criteria = currentFilter();
+        if (!Object.values(criteria).some(Boolean)) { alert("Choose at least one filter before saving."); return; }
+        const name = prompt("Name this filter:");
+        if (!name || !name.trim()) return;
+        const filters = savedFilters();
+        filters.push({ ...criteria, name: name.trim(), id: `${Date.now()}-${Math.random().toString(36).slice(2)}` });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filters)); renderSaved();
+      });
+      renderSaved(); load();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: job-notif
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false

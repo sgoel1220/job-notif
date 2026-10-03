@@ -1,0 +1,1885 @@
+{
+  "schema_version": 1,
+  "companies": [
+    {
+      "name": "1047 Games",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "1Password",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "37signals",
+      "enabled": true,
+      "provider": "atom-feed",
+      "board": "https://37signals.com/feed/jobs.xml",
+      "source": "existing-direct",
+      "notes": "Existing Rust direct source in src/signals.rs."
+    },
+    {
+      "name": "Abridge",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "abridge",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Acorns",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Adobe",
+      "enabled": true,
+      "provider": "workday",
+      "board": "adobe/wd5/external_experienced",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Affirm",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "affirm"
+    },
+    {
+      "name": "AG1",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "ag1",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Greenhouse board."
+    },
+    {
+      "name": "AgentSync",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Airbnb",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "airbnb"
+    },
+    {
+      "name": "Akamai",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Alma",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Almanac",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Analog Devices",
+      "enabled": true,
+      "provider": "workday",
+      "board": "analogdevices/wd1/External",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Anduril",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "andurilindustries",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "AngelList",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Angi",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Anthropic",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "anthropic",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Apollo.io",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Applied Materials",
+      "enabled": true,
+      "provider": "workday",
+      "board": "amat/wd1/External",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Arista Networks",
+      "enabled": true,
+      "provider": "smartrecruiters",
+      "board": "AristaNetworks",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Asana",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "asana",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Asapp",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Ashby",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "AT&T",
+      "enabled": true,
+      "provider": "workday",
+      "board": "att/wd1/ATTCollegeSpecialInvite",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Atlassian",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Auth0",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Autodesk",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "workday",
+      "board": "autodesk/wd1/uni"
+    },
+    {
+      "name": "Automattic",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "automatticcareers",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Greenhouse board."
+    },
+    {
+      "name": "Axon",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Belvedere Trading",
+      "enabled": true,
+      "provider": "lever",
+      "board": "belvederetrading",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Binance",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Bird",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Block",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Blockchain.com",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Bloom Tech",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Box",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "boxinc",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Brex",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "brex"
+    },
+    {
+      "name": "Buffer",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "buffer",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Ashby board."
+    },
+    {
+      "name": "Bungie",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "BuySellAds",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Cadence Design Systems",
+      "enabled": true,
+      "provider": "workday",
+      "board": "cadence/wd1/External_Careers",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Calendly",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Calm",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Cameo",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Canonical",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Canva",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "smartrecruiters",
+      "board": "Canva"
+    },
+    {
+      "name": "Capital One",
+      "enabled": true,
+      "provider": "workday",
+      "board": "capitalone/wd12/Capital_One",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Caylent",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Cerebral",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Certa",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "certa",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Ashby board."
+    },
+    {
+      "name": "Chain",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Chainlink Labs",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Chess.com",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Chili Piper",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "chilipiper",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Ashby board."
+    },
+    {
+      "name": "Chime",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "chime",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Circle",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "CircleCI",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Cisco",
+      "enabled": true,
+      "provider": "workday",
+      "board": "cisco/wd5/cisco_careers",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Clearbit",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "ClickHouse",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "clickhouse",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Close",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Cloudbees",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Cloudflare",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "cloudflare"
+    },
+    {
+      "name": "Cloudless Labs",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Cohere",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "cohere",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Coinbase",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "coinbase"
+    },
+    {
+      "name": "Collibra",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Commsor",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Confluent",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "ashby",
+      "board": "confluent"
+    },
+    {
+      "name": "Consensys",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Coqui",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Cribl",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "CrowdStrike",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Cursor",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "cursor",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Customer.io",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Dapper Labs",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "DappRadar",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Databricks",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "databricks",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "DataChain",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Datadog",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "datadog",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Decagon",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "decagon",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Deel",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved: research found Ashby careers evidence, but board slug was not verified."
+    },
+    {
+      "name": "Deepgram",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "deepgram",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Degreed",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Dell Technologies",
+      "enabled": true,
+      "provider": "workday",
+      "board": "dell/wd1/External",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "DigitalOcean",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Discord",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "discord"
+    },
+    {
+      "name": "DNSFilter",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "dnsfilter",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Greenhouse board."
+    },
+    {
+      "name": "DocuSign",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Doist",
+      "enabled": true,
+      "provider": "workable",
+      "board": "doist",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Workable board."
+    },
+    {
+      "name": "DoorDash",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "doordashusa",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Dropbox",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "dropbox"
+    },
+    {
+      "name": "DRW",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "drweng",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Elastic",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "ElevenLabs",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "ashby",
+      "board": "elevenlabs"
+    },
+    {
+      "name": "Etsy",
+      "enabled": true,
+      "provider": "workday",
+      "board": "etsy/wd5/Etsy_Careers",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "EvenUp",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Fastly",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Figma",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "figma",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Five Rings Capital",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "fiveringsllc",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Flow Traders",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "flowtraders",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Freshworks",
+      "enabled": true,
+      "provider": "smartrecruiters",
+      "board": "Freshworks",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "G-Research",
+      "enabled": true,
+      "provider": "workday",
+      "board": "gresearch/wd103/G-Research",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Ginger",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "GitHub",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "GitLab",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "gitlab",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "GlobalFoundries",
+      "enabled": true,
+      "provider": "workday",
+      "board": "globalfoundries/wd1/External",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Grafana",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Graphy",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "GrowthX AI",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "GrowthX AI",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Ashby board; preserve space in board slug and URL-encode at request time."
+    },
+    {
+      "name": "Guidewheel",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Gumroad",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Gusto",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "gusto",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Harmony",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Harvey",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "harvey",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "HashiCorp",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Heap",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Helium 10",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Hopin",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Hubspot",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Hugging Face",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Illumio",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "IMC Trading",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "imc",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "InfluxData",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "insightsoftware",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Instacart",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "instacart"
+    },
+    {
+      "name": "Intel",
+      "enabled": true,
+      "provider": "workday",
+      "board": "intel/wd1/external",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Jane Street",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "janestreet",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Jeeves",
+      "enabled": true,
+      "provider": "lever",
+      "board": "tryjeeves",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Lever board; also existing Rust direct source in src/jeeves.rs."
+    },
+    {
+      "name": "Jump Trading",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "jumptrading",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "JupiterOne",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Karat",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Kilo Code",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Kit",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "KLA",
+      "enabled": true,
+      "provider": "workday",
+      "board": "kla/wd1/UR",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Kraken",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "League",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Linear",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "linear",
+      "source": "existing-direct",
+      "notes": "Existing Rust direct source in src/linear.rs."
+    },
+    {
+      "name": "Loft",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Lokalise",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "lokalise",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Greenhouse board."
+    },
+    {
+      "name": "Loom",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Loops",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Lyft",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "lyft",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Marqeta",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Marshall Wace",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "mwinternshipprogram",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Marvell",
+      "enabled": true,
+      "provider": "workday",
+      "board": "marvell/wd1/MarvellCareers2",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Mastercard",
+      "enabled": true,
+      "provider": "workday",
+      "board": "mastercard/wd1/CorporateCareers",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Mastodon",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Match Group",
+      "enabled": true,
+      "provider": "lever",
+      "board": "matchgroup",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Mattermost",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Medallia",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Mercor",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "mercor",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Metabase",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Micron Technology",
+      "enabled": true,
+      "provider": "workday",
+      "board": "micron/wd1/External",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Midjourney",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "midjourney",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Ashby board."
+    },
+    {
+      "name": "Modal",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "modal",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "MongoDB",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "mongodb",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "MoonPay",
+      "enabled": true,
+      "provider": "lever",
+      "board": "moonpay",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Lever board; also existing Rust direct source in src/moonpay.rs."
+    },
+    {
+      "name": "Motorola Solutions",
+      "enabled": true,
+      "provider": "workday",
+      "board": "motorolasolutions/wd5/Careers",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Mozilla",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Mr Yum",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Mural",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "NCX",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Neo4j",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "neo4j",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Netlify",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Newfront",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Notion",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "notion",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Numbrs",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "NVIDIA",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "workday",
+      "board": "nvidia/wd5/NVIDIAExternalCareerSite"
+    },
+    {
+      "name": "NXP Semiconductors",
+      "enabled": true,
+      "provider": "workday",
+      "board": "nxp/wd3/careers",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Obsidian",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "OKcoin",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Okta",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "OnDeck",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "OpenAI",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "openai",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "OpenSea",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Optiver",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "optiverprivate",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Oracle",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Osano",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Pacvue",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Pagerduty",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Pagos",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Palantir",
+      "enabled": true,
+      "provider": "lever",
+      "board": "palantir",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Palo Alto Networks",
+      "enabled": true,
+      "provider": "workday",
+      "board": "paloaltonetworks/wd5/panwexternalcareers",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "PandaDoc",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Parabol",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "PEAK6",
+      "enabled": true,
+      "provider": "workday",
+      "board": "peak6group/wd1/CapMan",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Physical Intelligence",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "physicalintelligence",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Pinterest",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "pinterest",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Plaid",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Point72",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "point72",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Posit",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "ProjectDiscovery",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Protocol Labs",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Prufrock Ventures",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Quora",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Ramp",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "ashby",
+      "board": "ramp"
+    },
+    {
+      "name": "Red Hat",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Reddit",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "reddit"
+    },
+    {
+      "name": "Refersion",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "RelationalAI",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Relativity Space",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Remote",
+      "enabled": false,
+      "provider": "remote-public",
+      "board": "remote",
+      "source": "existing-direct",
+      "notes": "Disabled: apply.remote.com/api/public/jobs returns HTTP 403. Do not use the unrelated Greenhouse /remote board; enable only after verifying an official public Remote.com feed."
+    },
+    {
+      "name": "Replit",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "ashby",
+      "board": "replit"
+    },
+    {
+      "name": "Rithum",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Robin Healthcare",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Robinhood",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "robinhood",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Roblox",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "roblox",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Root Insurance",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "RootstockLabs",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "runZero",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "SafetyWing",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Salesforce",
+      "enabled": true,
+      "provider": "workday",
+      "board": "salesforce/wd12/External_Career_Site",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Samsara",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "samsara"
+    },
+    {
+      "name": "Samsung",
+      "enabled": true,
+      "provider": "workday",
+      "board": "sec/wd3/Samsung_Careers",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Scale AI",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "scaleai",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Schonfeld",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "schonfeld",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "SecurityScorecard",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "ServiceNow",
+      "enabled": true,
+      "provider": "smartrecruiters",
+      "board": "ServiceNow",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Shogun",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Shopify",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Shopmonkey",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "SingleStore",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Skillshare",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Slack",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Snowflake",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "ashby",
+      "board": "snowflake"
+    },
+    {
+      "name": "Sony",
+      "enabled": true,
+      "provider": "workday",
+      "board": "sonyglobal/wd1/SonyGlobalCareers",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Sourcegraph",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "sourcegraph91",
+      "source": "docs/companies-ats-research.md",
+      "notes": "Verified public Greenhouse board."
+    },
+    {
+      "name": "SpaceX",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "spacex",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Spotify",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "lever",
+      "board": "spotify"
+    },
+    {
+      "name": "Spruce",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Squarepoint Capital",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "squarepointcapital",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Stedi",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Stripe",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "stripe"
+    },
+    {
+      "name": "Suno",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "suno",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Supabase",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "supabase",
+      "source": "existing-direct",
+      "notes": "Existing Rust direct source in src/supabase.rs."
+    },
+    {
+      "name": "Superhuman",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Superhuman Docs",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "SUSE",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Syndicate",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Sysdig",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "T-Mobile",
+      "enabled": true,
+      "provider": "workday",
+      "board": "tmobile/wd1/External",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Tabular",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Teamshares",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Teleport",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "The Browser Company",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Thumbtack",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Toggl",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Toptal",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Trust Machines",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Turso",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Twilio",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "greenhouse",
+      "board": "twilio"
+    },
+    {
+      "name": "Udemy",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "udemybedi",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Unqork",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Upwork",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Varsity Tutors",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Veeva Systems",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Vercel",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Visa",
+      "enabled": true,
+      "provider": "smartrecruiters",
+      "board": "Visa",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "VSCO",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Wave",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Webflow",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Western Digital",
+      "enabled": true,
+      "provider": "smartrecruiters",
+      "board": "WesternDigital",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Whatnot",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Wikimedia",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Wonolo",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Xapo",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "XTX Markets",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "xtxmarketstechnologies",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Yelp",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Zapier",
+      "enabled": false,
+      "source": "companies.csv",
+      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+    },
+    {
+      "name": "Zendesk",
+      "enabled": true,
+      "provider": "workday",
+      "board": "zendesk/wd1/zendesk",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    },
+    {
+      "name": "Zillow",
+      "enabled": true,
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified.",
+      "provider": "workday",
+      "board": "zillow/wd5/Zillow_Group_External"
+    },
+    {
+      "name": "Zoom",
+      "enabled": true,
+      "provider": "workday",
+      "board": "zoom/wd5/zoom",
+      "source": "internship-watcher/boards.json",
+      "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
+    }
+  ]
+}

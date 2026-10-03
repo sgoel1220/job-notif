@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "targets": [
+      "jobs_api"
+    ],
+    "ignore": [],
+    "source": "functions"
+  }
+}

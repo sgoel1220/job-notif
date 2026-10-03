@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Saved jobs</title>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <h1>Saved jobs</h1>
+
+  <h2>Add a job</h2>
+  <form id="job-form">
+    <p><label>Job title <input name="title" required></label></p>
+    <p><label>Company <input name="company" required></label></p>
+    <p><label>Location <input name="location"></label></p>
+    <p><label>Job link <input name="source_url" type="url" required></label></p>
+    <button type="submit">Save job</button>
+  </form>
+
+  <h2>My jobs</h2>
+  <label>Show status
+    <select id="status-filter">
+      <option value="all">All</option>
+      <option value="saved">Saved</option>
+      <option value="applied">Applied</option>
+      <option value="dismissed">Dismissed</option>
+    </select>
+  </label>
+  <p id="message" role="status">Loading jobs…</p>
+  <ul id="jobs-list"></ul>
+
+  <template id="job-template">
+    <li>
+      <strong class="job-title"></strong> — <span class="job-company"></span>
+      (<span class="job-location"></span>)
+      <a class="job-link" target="_blank" rel="noopener noreferrer">Listing</a>
+      <label>Status
+        <select class="job-status">
+          <option value="saved">Saved</option>
+          <option value="applied">Applied</option>
+          <option value="dismissed">Dismissed</option>
+        </select>
+      </label>
+      <button class="delete-job" type="button">Delete</button>
+    </li>
+  </template>
+</body>
+</html>
