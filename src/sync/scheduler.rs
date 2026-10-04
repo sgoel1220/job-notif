@@ -3,7 +3,7 @@ use crate::{errors, state::AppState};
 use axum::http::StatusCode;
 use std::time::Duration;
 
-pub(crate) const TOTAL_SYNC_TIMEOUT: Duration = Duration::from_secs(15 * 60);
+pub(crate) const TOTAL_SYNC_TIMEOUT: Duration = Duration::from_secs(45 * 60);
 pub(crate) async fn run_daily_sync(state: AppState) {
     use tokio::time::{interval, Duration};
 

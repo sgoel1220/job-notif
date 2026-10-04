@@ -171,3 +171,41 @@ fn invalid_raw_metadata_does_not_erase_normalized_location() {
         Some("Bengaluru, India")
     );
 }
+
+#[test]
+fn html_only_descriptions_get_plaintext_with_entities_and_boundaries() {
+    let html = "<p>R&amp;D &lt;team&gt;</p><ul><li>Build systems</li><li>Ship safely</li></ul>";
+    let raw = serde_json::json!({"description": html});
+    let job = JobPosting::basic(
+        "workday",
+        "1",
+        "Engineer".into(),
+        "Example",
+        None,
+        None,
+        "https://example.test/job".into(),
+        &raw,
+    );
+    assert_eq!(job.description.as_deref(), Some(html));
+    let text = job.description_text.unwrap();
+    assert!(text.contains("R&D <team>"), "{text}");
+    assert!(text.contains("Build systems") && text.contains("Ship safely"));
+    assert!(!text.contains("<p>") && !text.contains("&amp;"));
+}
+
+#[test]
+fn provider_plaintext_is_preferred_over_html_fallback() {
+    let raw =
+        serde_json::json!({"description": "<p>HTML</p>", "descriptionPlain": "Provider plaintext"});
+    let job = JobPosting::basic(
+        "smartrecruiters",
+        "1",
+        "Engineer".into(),
+        "Example",
+        None,
+        None,
+        "https://example.test/job".into(),
+        &raw,
+    );
+    assert_eq!(job.description_text.as_deref(), Some("Provider plaintext"));
+}

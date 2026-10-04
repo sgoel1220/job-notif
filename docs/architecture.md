@@ -8,7 +8,7 @@
 - **Additional direct feeds:** The registry also accepts `remote-public` and `atom-feed` entries for non-ATS direct sources already represented by Rust direct-source modules.
 - **Legacy snapshot:** The running sync never fetches the retired aggregate source. Previously imported `open-jobs-data/` rows remain active as fallback until the corresponding company's complete direct snapshot succeeds; failed or unresolved replacements do not retire fallback rows.
 - **Runtime modules:** `src/main.rs` only boots the application. `src/state.rs` owns shared state. `src/sync/` separates scheduling, manual authorization, and source execution/reconciliation. `src/job_postings/` separates API pagination, query filters, metadata normalization, location handling, and transactional persistence. Oversized test suites are grouped by responsibility under the corresponding module directories.
-- **Reconciliation:** Each direct company/provider feed is treated as its own complete source snapshot. A successful feed upserts seen rows and marks missing rows inactive only inside that source namespace. Failed or invalid feed responses must not replace existing data or mark prior listings inactive. Sources run concurrently with a bounded limit of eight; each source failure is collected independently so remaining sources continue, while the full-sync timestamp advances only if every source succeeds. ATS fetches have a five-minute company-level deadline, and complete manual/scheduled sync runs have a fifteen-minute deadline; timeouts release the sync lock and never reconcile an incomplete fetch.
+- **Reconciliation:** Each direct company/provider feed is treated as its own complete source snapshot. A successful feed upserts seen rows and marks missing rows inactive only inside that source namespace. Failed or invalid feed responses must not replace existing data or mark prior listings inactive. Sources run concurrently with a bounded limit of eight; each source failure is collected independently so remaining sources continue, while the full-sync timestamp advances only if every source succeeds. ATS fetches have a five-minute company-level deadline (fifteen minutes for detail-backed Workday/SmartRecruiters boards), and complete manual/scheduled sync runs have a forty-five-minute deadline; timeouts release the sync lock and never reconcile an incomplete fetch.
 
 ## Registry and adapter support
 
@@ -25,12 +25,12 @@ Current generic ATS adapter support validated from `src/ats.rs`:
 - Greenhouse: `GET https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true` (includes descriptions).
 - Lever: `GET https://api.lever.co/v0/postings/{slug}?mode=json`.
 - Ashby: `GET https://api.ashbyhq.com/posting-api/job-board/{slug}?includeCompensation=true`.
-- SmartRecruiters: paginated `GET https://api.smartrecruiters.com/v1/companies/{slug}/postings`.
+- SmartRecruiters: paginated `GET https://api.smartrecruiters.com/v1/companies/{slug}/postings`, then bounded detail requests to `/postings/{id}` for `jobAd.sections` descriptions.
 - Workable: `GET https://apply.workable.com/api/v1/widget/accounts/{slug}?details=false`.
 - Recruitee: `GET https://{slug}.recruitee.com/api/offers/`.
 - Personio: `GET https://{slug}.jobs.personio.de/xml`.
 - BambooHR: `GET https://{slug}.bamboohr.com/careers/list`.
-- Workday: paginated `POST https://{tenant}.{shard}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` using tenant/site/shard config.
+- Workday: paginated `POST https://{tenant}.{shard}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` using tenant/site/shard config, then bounded detail GETs to the same base plus `externalPath` (which already includes `/job/`) for `jobPostingInfo.jobDescription`.
 
 ## Normalization contract
 
@@ -39,7 +39,8 @@ Direct adapters map provider payloads into `JobPosting` with:
 - source namespace `ats/{provider}/{source_ref}` for generic ATS adapters;
 - stable provider job ID when available, falling back only where adapter-specific logic defines it;
 - normalized title, company, URL, location, workplace type, department, employment type, and posted timestamp when supplied;
-- raw provider object retained in `details_json`.
+- raw provider object retained in `details_json`;
+- HTML descriptions retained verbatim and plain text derived with the MIT-licensed `html2text` parser when the provider does not supply it. Detail lookup failures retain listing jobs, and snapshot upserts preserve previously stored descriptions when replacement fields are blank. See [description-only backfill](description-backfill.md) for filling existing active Workday/SmartRecruiters rows without replacing snapshots.
 
 The direct-feed design keeps source namespaces isolated. The runner retires company-scoped aggregate fallback rows only after successful direct replacement; failed feeds retain prior listings and prevent advancing the full-sync success timestamp. Manual and scheduled syncs share a mutex to avoid concurrent reconciliation; both persist the successful-sync timestamp before releasing that mutex. Aggregate fallback retirement is transactional. SmartRecruiters/Workday pagination must be complete: safety caps or malformed/incomplete pages fail the source instead of reconciling a partial snapshot.
 

@@ -24,6 +24,16 @@ pub(super) async fn fetch_workday(
         "https://{}.{}.myworkdayjobs.com/wday/cxs/{}/{}",
         workday.tenant, workday.shard, workday.tenant, workday.site
     );
+    fetch_workday_at(client, identity, options, workday, base_url).await
+}
+
+async fn fetch_workday_at(
+    client: &reqwest::Client,
+    identity: &AtsSourceIdentity,
+    options: &AtsFetchOptions,
+    workday: &WorkdayConfig,
+    base_url: String,
+) -> Result<Vec<NormalizedAtsJob>, AtsFetchError> {
     let mut offset = 0usize;
     let mut total: Option<usize> = None;
     let mut postings = Vec::<Value>::new();
@@ -52,21 +62,16 @@ pub(super) async fn fetch_workday(
         .await?;
         let reported_total = optional_usize(&data, "total")
             .ok_or_else(|| invalid_feed(identity, &url, "missing or invalid total"))?;
-        match total {
-            Some(previous) if previous != reported_total => {
-                return Err(invalid_feed(
-                    identity,
-                    &url,
-                    format!("total changed from {previous} to {reported_total}"),
-                ))
-            }
-            None => total = Some(reported_total),
-            _ => {}
-        }
-        let total_value = total.unwrap_or_default();
         let page = array_at(&data, &["jobPostings"]).ok_or_else(|| {
             invalid_feed(identity, &url, "missing jobPostings array in Workday page")
         })?;
+        total = Some(resolve_workday_page_total(
+            identity,
+            &url,
+            total,
+            reported_total,
+        )?);
+        let total_value = total.unwrap_or_default();
         if page.len() > limit {
             return Err(invalid_feed(
                 identity,
@@ -115,25 +120,86 @@ pub(super) async fn fetch_workday(
             let Some(path) = string_at(&posting, &["externalPath"]) else {
                 return posting;
             };
+            // externalPath already includes `/job/...` in Workday's listing response.
             let detail_url = format!(
-                "{base_url}/job{}",
+                "{base_url}{}",
                 if path.starts_with('/') {
-                    path
+                    path.clone()
                 } else {
                     format!("/{path}")
                 }
             );
-            match get_json(&client, &identity, &detail_url).await {
+            let mut result = Err(String::new());
+            for attempt in 0..3 {
+                let response = tokio::time::timeout(
+                    std::time::Duration::from_secs(15),
+                    get_json(&client, &identity, &detail_url),
+                )
+                .await;
+                let retry = match response {
+                    Ok(Ok(detail)) => {
+                        result = Ok(detail);
+                        break;
+                    }
+                    Ok(Err(error)) => {
+                        let retry = match &error {
+                            AtsFetchError::Request { .. } => true,
+                            AtsFetchError::Http { status, .. } => {
+                                status.as_u16() == 429 || status.is_server_error()
+                            }
+                            _ => false,
+                        };
+                        result = Err(error.to_string());
+                        retry
+                    }
+                    Err(_) => {
+                        result = Err("detail request timed out after 15s".to_owned());
+                        true
+                    }
+                };
+                if !retry || attempt == 2 {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(250 * (attempt + 1))).await;
+            }
+            match result {
                 Ok(detail) => merge_workday_detail(posting, detail),
-                Err(_) => posting, // Summary remains usable; unavailable detail metadata stays unknown.
+                Err(error) => {
+                    eprintln!(
+                        "Workday detail unavailable; retaining listing for {} {}: {error}",
+                        identity.company_name, path
+                    );
+                    posting
+                }
             }
         }
     }))
-    .buffer_unordered(WORKDAY_DETAIL_CONCURRENCY)
+    .buffered(WORKDAY_DETAIL_CONCURRENCY)
     .collect::<Vec<_>>()
     .await;
     let data = json!({ "jobPostings": enriched });
     map_workday_jobs(identity, "workday:aggregated", &data, workday)
+}
+
+fn resolve_workday_page_total(
+    identity: &AtsSourceIdentity,
+    url: &str,
+    expected: Option<usize>,
+    reported: usize,
+) -> Result<usize, AtsFetchError> {
+    match expected {
+        None => Ok(reported),
+        Some(previous) if reported == previous => Ok(previous),
+        // Workday reports the real total on page zero but returns total=0 on later pages.
+        // Preserve the first-page snapshot boundary; an empty page before that boundary is
+        // still rejected by ensure_complete_snapshot below.
+        Some(previous) if reported == 0 && previous > 0 => Ok(previous),
+        Some(previous) => Err(invalid_feed(
+            identity,
+            url,
+            format!("total changed from {previous} to {reported}"),
+        )),
+    }
 }
 
 pub(super) fn map_workday_jobs(
@@ -204,9 +270,24 @@ pub(super) fn merge_workday_detail(mut posting: Value, detail: Value) -> Value {
     // listing payload intact while exposing that object to the normalizer and stored details.
     if let Some(info) = detail.get("jobPostingInfo").cloned() {
         if let Some(object) = posting.as_object_mut() {
+            // The generic posting normalizer consumes these canonical fields. Preserve
+            // Workday's original response below as well for auditability.
+            if let Some(description) = string_at(&info, &["jobDescription"]) {
+                object.insert("description".to_owned(), Value::String(description));
+            }
+            if let Some(description_text) = string_at(&info, &["jobDescriptionPlain"]) {
+                object.insert(
+                    "descriptionPlain".to_owned(),
+                    Value::String(description_text),
+                );
+            }
             object.insert("jobPostingInfo".to_owned(), info);
             object.insert("detailResponse".to_owned(), detail);
         }
     }
     posting
 }
+
+#[cfg(test)]
+#[path = "workday_tests.rs"]
+mod tests;

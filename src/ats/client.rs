@@ -32,8 +32,18 @@ pub(crate) async fn fetch_company_jobs_with_options(
     options: &AtsFetchOptions,
 ) -> Result<Vec<FetchedAtsJob>, AtsFetchError> {
     let identity = company.identity()?;
+    // Detail-backed providers perform one additional request per posting; large
+    // boards need a larger bounded budget than single-response listing APIs.
+    let timeout = if matches!(
+        company.provider,
+        AtsProvider::Workday | AtsProvider::SmartRecruiters
+    ) {
+        Duration::from_secs(15 * 60)
+    } else {
+        COMPANY_FETCH_TIMEOUT
+    };
     run_with_deadline(
-        COMPANY_FETCH_TIMEOUT,
+        timeout,
         identity.provider,
         identity.company_name.clone(),
         async {

@@ -5,13 +5,15 @@
       "name": "1047 Games",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:37:39.137713+00:00: unresolved. Board page branded 1047 Games; API returned 404, board adapter feed not validated. Parent adapter-path verification failed: HTTP Error 404: Not Found. Evidence: https://boards.greenhouse.io/1047games. Next: Find current official application board or diagnose endpoint failure; do not retry the same candidate without new evidence."
     },
     {
       "name": "1Password",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/1password",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (69 jobs): https://api.ashbyhq.com/posting-api/job-board/1password?includeCompensation=true",
+      "provider": "ashby",
+      "board": "1password"
     },
     {
       "name": "37signals",
@@ -31,9 +33,11 @@
     },
     {
       "name": "Acorns",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.acorns.com/career-opportunities/",
+      "notes": "Verified 2026-10-03T22:41:25.586632+00:00; Official current-opportunities page plus current Ashby-branded posting https://jobs.ashbyhq.com/Acorns/4126ec02-408e-4ab4-b528-46739f0dc36c. Parent hosted board title: 'Acorns Jobs'. Parent HTTP 200; validated adapter-compatible payload; 9 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/Acorns?includeCompensation=true. Context: Disabled because board slug/provider were intentionally unguessed; official page and current Ashby-branded posting establish identity. Next: Add verified Ashby board Acorns to registry.",
+      "provider": "ashby",
+      "board": "Acorns"
     },
     {
       "name": "Adobe",
@@ -63,7 +67,7 @@
       "name": "AgentSync",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:36:45Z: unsupported_provider. Rippling-hosted ATS, not in current adapter set; official site points to ATS. Evidence: https://ats.rippling.com/agentsync-careers/jobs. Next: Document and implement rippling feed support; no current runtime mapping. Add Rippling adapter after documenting public API; keep disabled until supported."
     },
     {
       "name": "Airbnb",
@@ -77,19 +81,19 @@
       "name": "Akamai",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; 257799-byte HTML; career page served but no direct recognized ATS URL among extracted href/src/action links. Evidence: https://www.akamai.com/careers. Next: inspect JS assets / page network API; no feed guessed"
     },
     {
       "name": "Alma",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:37:39.137713+00:00: inactive_or_acquired. Official careers page states Alma is joining Spring Health; roles redirect to parent careers. Evidence: https://helloalma.com/careers/. Next: Confirm legacy/parent status with official company source."
     },
     {
       "name": "Almanac",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:31.333108+00:00: unresolved. Parent fetched 47171 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://www.almanac.io/careers. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Analog Devices",
@@ -109,15 +113,17 @@
     },
     {
       "name": "AngelList",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.lever.co/angellist",
+      "notes": "Verified 2026-10-03T22:39:41.043624+00:00; Official AngelList careers page links jobs.lever.co/angellist. Parent hosted board title: 'AngelList'. Parent HTTP 200; validated adapter-compatible payload; 27 jobs. Feed: https://api.lever.co/v0/postings/angellist?mode=json. Context: Previously unresolved despite supported Lever integration. Next: Configure Lever board angellist.",
+      "provider": "lever",
+      "board": "angellist"
     },
     {
       "name": "Angi",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: blocked. HTTP 403 at official careers URL; response is an access-denial/challenge page. Evidence: https://www.angi.com/careers/jobs. Next: retry via browser/search or official linked ATS; do not infer provider"
     },
     {
       "name": "Anthropic",
@@ -129,9 +135,11 @@
     },
     {
       "name": "Apollo.io",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.apollo.io/careers",
+      "notes": "Verified 2026-10-03T22:39:35.675931+00:00; Official careers links Greenhouse board branded Apollo.io; API validated jobs array, 48 postings. Parent hosted board title: 'Jobs at Apollo.io'. Parent HTTP 200; validated adapter-compatible payload; 48 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/apolloio/jobs?content=true. Context: Official careers links Greenhouse board branded Apollo.io; API validated jobs array, 48 postings. Next: No immediate action; parent should independently revalidate before registry merge.",
+      "provider": "greenhouse",
+      "board": "apolloio"
     },
     {
       "name": "Applied Materials",
@@ -159,15 +167,19 @@
     },
     {
       "name": "Asapp",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.asapp.com/careers",
+      "notes": "Verified 2026-10-03T22:44:02.723647+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for lever/asapp-2. Parent hosted board title: 'ASAPP'. Parent HTTP 200; validated adapter-compatible payload; 13 jobs. Feed: https://api.lever.co/v0/postings/asapp-2?mode=json. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "lever",
+      "board": "asapp-2"
     },
     {
       "name": "Ashby",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/Ashby",
+      "notes": "Verified 2026-10-03T22:39:41.044058+00:00; Ashby official careers links to Ashby board. Parent hosted board title: 'Ashby Jobs'. Parent HTTP 200; validated adapter-compatible payload; 62 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/ashby?includeCompensation=true. Context: Company itself uses its own Ashby-hosted board. Next: Configure Ashby board slug ashby.",
+      "provider": "ashby",
+      "board": "ashby"
     },
     {
       "name": "AT&T",
@@ -181,13 +193,13 @@
       "name": "Atlassian",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; 159500-byte HTML; no ATS URL extracted in common link attributes. Careers page is live, ATS endpoint not established. Evidence: https://www.atlassian.com/company/careers/all-jobs. Next: inspect embedded careers API/iCIMS configuration or page scripts"
     },
     {
       "name": "Auth0",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:37:39.137713+00:00: identity_conflict. Official Okta careers combines Okta/Auth0 roles; no independently authoritative Auth0 board established. Evidence: https://www.okta.com/company/careers/job-listing/. Next: Confirm legacy/parent status with official company source."
     },
     {
       "name": "Autodesk",
@@ -207,9 +219,19 @@
     },
     {
       "name": "Axon",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/axon",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (487 jobs): https://boards-api.greenhouse.io/v1/boards/axon/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "axon"
+    },
+    {
+      "name": "Baseten",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "baseten",
+      "source": "https://www.baseten.co/resources/careers/",
+      "notes": "Official careers page presents open roles; Ashby feed returned 105 postings including engineering roles. Parent rechecked nonempty JSON feed on 2026-10-03 (105 jobs): https://api.ashbyhq.com/posting-api/job-board/baseten"
     },
     {
       "name": "Belvedere Trading",
@@ -221,33 +243,39 @@
     },
     {
       "name": "Binance",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.lever.co/binance",
+      "notes": "Verified 2026-10-03: feed JSON shape and 310 job records/listing URLs validated. Hosted ATS title evidence: 'Binance'. Parent rechecked nonempty JSON feed on 2026-10-03 (310 jobs): https://api.lever.co/v0/postings/binance?mode=json",
+      "provider": "lever",
+      "board": "binance"
     },
     {
       "name": "Bird",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:31.587391+00:00: unresolved. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://www.ridewithbird.com/careers. Next: Confirm the current career URL from the employer homepage, follow its application links, then validate the actual ATS feed and payload before mapping."
     },
     {
       "name": "Block",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/block",
+      "notes": "Verified 2026-10-03: feed JSON shape and 227 job records/listing URLs validated. Hosted ATS title evidence: 'Block - Careers | What do you want to build?'. Parent rechecked nonempty JSON feed on 2026-10-03 (227 jobs): https://boards-api.greenhouse.io/v1/boards/block/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "block"
     },
     {
       "name": "Blockchain.com",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "http://job-boards.greenhouse.io/blockchain",
+      "notes": "Verified 2026-10-03T22:39:41.044317+00:00; Official careers page points to hosted Greenhouse; posting branding says Blockchain.com. Parent hosted board title: 'Jobs at Blockchain.com'. Parent HTTP 200; validated adapter-compatible payload; 38 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/blockchain/jobs?content=true. Context: Supported Greenhouse board was missing from registry. Next: Configure Greenhouse board blockchain.",
+      "provider": "greenhouse",
+      "board": "blockchain"
     },
     {
       "name": "Bloom Tech",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. Official HTML embeds api.lever.co/v0/postings/BloomTech?mode=json; direct request returned HTTP 404 JSON {ok,error}; slug endpoint is stale/invalid. Evidence: https://www.bloomtech.com/careers. Next: follow current official page outbound hiring link; do not register this Lever board"
     },
     {
       "name": "Box",
@@ -275,15 +303,17 @@
     },
     {
       "name": "Bungie",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/bungie",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (2 jobs): https://boards-api.greenhouse.io/v1/boards/bungie/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "bungie"
     },
     {
       "name": "BuySellAds",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:30.465115+00:00: custom_careers. Official page describes hiring but no ATS/feed link surfaced; custom page is only evidence. Evidence: https://www.buysellads.com/careers. Next: Follow official careers link and verify current feed endpoint/payload."
     },
     {
       "name": "Cadence Design Systems",
@@ -295,27 +325,33 @@
     },
     {
       "name": "Calendly",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/calendly",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (10 jobs): https://boards-api.greenhouse.io/v1/boards/calendly/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "calendly"
     },
     {
       "name": "Calm",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/calm",
+      "notes": "Verified 2026-10-03: feed JSON shape and 2 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at Calm.com'. Parent rechecked nonempty JSON feed on 2026-10-03 (2 jobs): https://boards-api.greenhouse.io/v1/boards/calm/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "calm"
     },
     {
       "name": "Cameo",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:31.593456+00:00: unresolved. Parent fetched 3036 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. Candidate careers URL returned HTTP 406; official current destination/board remains unverified. Evidence: https://www.cameo.com/careers. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Canonical",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/canonical",
+      "notes": "Verified 2026-10-03: feed JSON shape and 310 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at Canonical'. Parent rechecked nonempty JSON feed on 2026-10-03 (310 jobs): https://boards-api.greenhouse.io/v1/boards/canonical/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "canonical"
     },
     {
       "name": "Canva",
@@ -335,15 +371,17 @@
     },
     {
       "name": "Caylent",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/caylent",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (77 jobs): https://boards-api.greenhouse.io/v1/boards/caylent/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "caylent"
     },
     {
       "name": "Cerebral",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:36:45Z: unresolved. Workable cerebral is a legacy empty board, not the current authoritative platform. Current official careers links Greenhouse cerebral and a secondary healthcare-specialty cerebralgoogle board. Parent adapter-path verification failed: HTTP Error 404: Not Found. Evidence: https://cerebral.com/careers. Next: Find current official application board or diagnose endpoint failure; do not retry the same candidate without new evidence."
     },
     {
       "name": "Certa",
@@ -357,19 +395,19 @@
       "name": "Chain",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; 102613-byte HTML; no recognized ATS URL in extracted links. Evidence: https://chain.com/careers. Next: inspect rendered openings links/embedded scripts for current hiring destination"
     },
     {
       "name": "Chainlink Labs",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:37:39.137713+00:00: unresolved. Official careers page links Ashby board branded Chainlink Labs; direct endpoint response not parse-validated in this check. Parent adapter-path verification failed: HTTP Error 404: Not Found. Evidence: https://chainlinklabs.com/careers. Next: Find current official application board or diagnose endpoint failure; do not retry the same candidate without new evidence."
     },
     {
       "name": "Chess.com",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:31.673581+00:00: unsupported_provider. Parent official careers HTML embeds api.rippling.com/platform/api/ats/v2/board/chess/jobs; Rippling is absent from supported adapters. Evidence: https://www.chess.com/jobs. Next: Document Rippling board chess API payload and pagination; implement one reusable adapter for Chess.com and AgentSync."
     },
     {
       "name": "Chili Piper",
@@ -389,15 +427,19 @@
     },
     {
       "name": "Circle",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/circle",
+      "notes": "Verified 2026-10-03: feed JSON shape and 41 job records/listing URLs validated. Hosted ATS title evidence: 'Circle Jobs'. Parent rechecked nonempty JSON feed on 2026-10-03 (41 jobs): https://api.ashbyhq.com/posting-api/job-board/circle?includeCompensation=true",
+      "provider": "ashby",
+      "board": "circle"
     },
     {
       "name": "CircleCI",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/circleci",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (12 jobs): https://boards-api.greenhouse.io/v1/boards/circleci/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "circleci"
     },
     {
       "name": "Cisco",
@@ -411,7 +453,7 @@
       "name": "Clearbit",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:36:45Z: inactive_or_acquired. Acquired by HubSpot; Clearbit wholly owned subsidiary since acquisition completed 2023. Evidence: https://www.hubspot.com/company-news/hubspot-completes-acquisition-of-b2b-intelligence-leader-clearbit. Next: Do not add standalone Clearbit employer; track relevant hiring under HubSpot only if requested."
     },
     {
       "name": "ClickHouse",
@@ -423,15 +465,17 @@
     },
     {
       "name": "Close",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/close",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (5 jobs): https://api.ashbyhq.com/posting-api/job-board/close?includeCompensation=true",
+      "provider": "ashby",
+      "board": "close"
     },
     {
       "name": "Cloudbees",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; 155111-byte HTML; careers page HTML includes published structured careers content/open roles, but no recognized ATS link extracted. Evidence: https://www.cloudbees.com/careers. Next: inspect individual Learn more/application URLs for ATS or treat as custom page only after link follow-through"
     },
     {
       "name": "Cloudflare",
@@ -445,7 +489,7 @@
       "name": "Cloudless Labs",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:30.466216+00:00: custom_careers. Official join page lists opportunities on company site; no ATS feed found. Evidence: https://cloudless.dev/join.html. Next: Follow official careers link and verify current feed endpoint/payload."
     },
     {
       "name": "Cohere",
@@ -465,15 +509,17 @@
     },
     {
       "name": "Collibra",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/collibra",
+      "notes": "Verified 2026-10-03: feed JSON shape and 32 job records/listing URLs validated. Hosted ATS title evidence: 'Collibra Careers: Powering Possibility Through Data and AI | Collibra'. Parent rechecked nonempty JSON feed on 2026-10-03 (32 jobs): https://boards-api.greenhouse.io/v1/boards/collibra/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "collibra"
     },
     {
       "name": "Commsor",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:31.751367+00:00: unresolved. Parent careers URL returned HTTP 404; current authoritative careers destination remains unverified. Candidate careers URL returned HTTP 404; official current destination/board remains unverified. Evidence: https://www.commsor.com/careers. Next: Navigate from current official company homepage to the actual careers URL; stop retrying this 404 path."
     },
     {
       "name": "Confluent",
@@ -485,27 +531,39 @@
     },
     {
       "name": "Consensys",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/consensys",
+      "notes": "Verified 2026-10-03: feed JSON shape and 6 job records/listing URLs validated. Hosted ATS title evidence: 'Consensys  Jobs'. Parent rechecked nonempty JSON feed on 2026-10-03 (6 jobs): https://api.ashbyhq.com/posting-api/job-board/consensys?includeCompensation=true",
+      "provider": "ashby",
+      "board": "consensys"
+    },
+    {
+      "name": "Convex",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "convex-dev",
+      "source": "https://www.convex.dev/jobs",
+      "notes": "Official Work at Convex page links to Ashby; feed returned 13 postings, including software engineering roles. Parent rechecked nonempty JSON feed on 2026-10-03 (13 jobs): https://api.ashbyhq.com/posting-api/job-board/convex-dev"
     },
     {
       "name": "Coqui",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:33.459901+00:00: unresolved. Parent careers URL returned HTTP 404; current authoritative careers destination remains unverified. Official page reports currently no open positions; old job page is dated 2022. Evidence: https://coqui.ai/jobs/. Next: Navigate from current official company homepage to the actual careers URL; stop retrying this 404 path."
     },
     {
       "name": "Cribl",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: identity_conflict. Both branded Greenhouse and Ashby cribl feeds previously returned jobs; current careers HTML exposes no provider link and does not establish authoritative platform. Evidence: https://cribl.io/careers/. Next: Inspect official careers page browser network/widget configuration to identify current primary ATS; do not enable both duplicate feeds."
     },
     {
       "name": "CrowdStrike",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.crowdstrike.com/en-us/careers/",
+      "notes": "Verified 2026-10-03T22:44:02.719493+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for workday/crowdstrike/wd5/crowdstrikecareers. Parent HTTP 200; validated adapter-compatible payload; 356 jobs (Workday total; first page payload checked, production adapter handles full pagination). Feed: https://crowdstrike.wd5.myworkdayjobs.com/wday/cxs/crowdstrike/crowdstrikecareers/jobs. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "workday",
+      "board": "crowdstrike/wd5/crowdstrikecareers"
     },
     {
       "name": "Cursor",
@@ -517,21 +575,23 @@
     },
     {
       "name": "Customer.io",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/customerio",
+      "notes": "Verified 2026-10-03: feed JSON shape and 29 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at Customer.io'. Parent rechecked nonempty JSON feed on 2026-10-03 (29 jobs): https://boards-api.greenhouse.io/v1/boards/customerio/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "customerio"
     },
     {
       "name": "Dapper Labs",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:31.952688+00:00: custom_careers. Official careers workflow solicits direct email applications rather than exposing a verified board/feed. Evidence: https://www.dapperlabs.com/careers. Next: Do not add an ATS entry absent a structured official postings feed."
     },
     {
       "name": "DappRadar",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:33.486241+00:00: unresolved. Parent fetched 72617 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. Official career page found but no board/provider/feed detail verifiable. Evidence: https://dappradar.com/careers. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Databricks",
@@ -545,7 +605,7 @@
       "name": "DataChain",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: identity_conflict. HTTP 200; 597896-byte Japanese Next.js careers HTML; no recognized ATS link extracted. Japanese Datachain company source was investigated; CSV name alone does not distinguish it from the DataChain AI/data-tool company. Evidence: https://careers.datachain.jp/. Next: Confirm intended DataChain company domain before further ATS discovery."
     },
     {
       "name": "Datadog",
@@ -567,7 +627,7 @@
       "name": "Deel",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved: research found Ashby careers evidence, but board slug was not verified."
+      "notes": "Research 2026-10-03T22:39:35.677145+00:00: custom_careers. Parent fetched current official careers HTML: active application links use jobs.deel.com/deel/job-details/.../application, not a positively linked Ashby deel board. Empty legacy Ashby response cannot represent these active postings. Evidence: https://www.deel.com/careers/. Next: Inspect jobs.deel.com public listing API or server-rendered job data and design a supported adapter; do not enable empty Ashby deel."
     },
     {
       "name": "Deepgram",
@@ -579,9 +639,11 @@
     },
     {
       "name": "Degreed",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/degreed",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (2 jobs): https://boards-api.greenhouse.io/v1/boards/degreed/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "degreed"
     },
     {
       "name": "Dell Technologies",
@@ -595,7 +657,7 @@
       "name": "DigitalOcean",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:31.953666+00:00: unresolved. Parent fetched 147488 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://www.digitalocean.com/careers/open-roles. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Discord",
@@ -617,7 +679,7 @@
       "name": "DocuSign",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:33.712666+00:00: custom_careers. Official careers site is Jibe-branded/custom path, not a supported adapter endpoint; individual job URLs shown. Evidence: https://careers.docusign.com/careers-home/jobs. Next: Implement/research Jibe job-search API or locate vendor public feed."
     },
     {
       "name": "Doist",
@@ -653,9 +715,11 @@
     },
     {
       "name": "Elastic",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.elastic.co/",
+      "notes": "Verified 2026-10-03T22:44:04.644620+00:00; Greenhouse hosted board redirects to official jobs.elastic.co; board metadata API explicitly names Elastic. Previous identity rejection was caused by an empty HTML title, not a wrong employer. Parent HTTP 200; validated adapter-compatible payload; 394 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/elastic/jobs?content=true. Context: Greenhouse hosted board redirects to official jobs.elastic.co; board metadata API explicitly names Elastic. Previous identity rejection was caused by an empty HTML title, not a wrong employer. Next: Validate and merge adapter mapping.",
+      "provider": "greenhouse",
+      "board": "elastic"
     },
     {
       "name": "ElevenLabs",
@@ -677,13 +741,15 @@
       "name": "EvenUp",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:37:39.137713+00:00: unresolved. Official careers page and Ashby board branding agree; search index shows 40 roles; direct API response not parse-validated. Parent adapter-path verification failed: HTTP Error 404: Not Found. Evidence: https://www.evenuplaw.com/careers/. Next: Find current official application board or diagnose endpoint failure; do not retry the same candidate without new evidence."
     },
     {
       "name": "Fastly",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/fastly",
+      "notes": "Verified 2026-10-03: feed JSON shape and 43 job records/listing URLs validated. Hosted ATS title evidence: 'Current Job Openings | Fastly'. Parent rechecked nonempty JSON feed on 2026-10-03 (43 jobs): https://boards-api.greenhouse.io/v1/boards/fastly/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "fastly"
     },
     {
       "name": "Figma",
@@ -729,13 +795,13 @@
       "name": "Ginger",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:31.985062+00:00: unresolved. Parent fetched 103447 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://www.ginger.com/careers. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "GitHub",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:33.923291+00:00: custom_careers. Official careers portal is custom Jibe-style; no adapter feed located. Evidence: https://www.github.careers/careers-home/jobs. Next: Inspect official portal network/API for stable public job endpoint."
     },
     {
       "name": "GitLab",
@@ -755,15 +821,17 @@
     },
     {
       "name": "Grafana",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/grafanalabs",
+      "notes": "Verified 2026-10-03. Greenhouse postings explicitly identify Grafana Labs; API returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (121 jobs): https://boards-api.greenhouse.io/v1/boards/grafanalabs/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "grafanalabs"
     },
     {
       "name": "Graphy",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; 954597-byte Framer HTML; careers page has open-role content but no recognized ATS link extracted. Evidence: https://graphy.app/careers. Next: follow Open Roles links and verify target ATS/feed"
     },
     {
       "name": "GrowthX AI",
@@ -775,15 +843,17 @@
     },
     {
       "name": "Guidewheel",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.guidewheel.com/company/current-opportunities",
+      "notes": "Verified 2026-10-03T22:44:02.720810+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for greenhouse/guidewheel. Parent hosted board title: 'Guidewheel Careers | Current Opportunities'. Parent HTTP 200; validated adapter-compatible payload; 4 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/guidewheel/jobs?content=true. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "greenhouse",
+      "board": "guidewheel"
     },
     {
       "name": "Gumroad",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:32.038214+00:00: unresolved. Parent fetched 32420 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://gumroad.com/jobs. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Gusto",
@@ -797,7 +867,7 @@
       "name": "Harmony",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:36:45Z: identity_conflict. Name collision: Harmony AI board could refer to unrelated company; no evidence CSV target identity equals tryharmony.ai. Evidence: https://jobs.ashbyhq.com/harmony. Next: Confirm intended company domain/identity before mapping."
     },
     {
       "name": "Harvey",
@@ -811,43 +881,49 @@
       "name": "HashiCorp",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: blocked. HTTP 429 at official careers page, 31197-byte response; rate-limited; current IBM transition board not verified. Evidence: https://www.hashicorp.com/en/careers. Next: retry official careers source later; inspect IBM-hosted linked destination"
     },
     {
       "name": "Heap",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:37:39.137713+00:00: inactive_or_acquired. Official Heap page says Heap is part of Contentsquare and directs candidates to Contentsquare careers. Evidence: https://www.heap.io/careers. Next: Confirm legacy/parent status with official company source."
     },
     {
       "name": "Helium 10",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.helium10.com/careers/",
+      "notes": "Verified 2026-10-03T22:41:25.588143+00:00; Official page https://www.helium10.com/careers/ and employer-branded board http://job-boards.greenhouse.io/helium10. Parent hosted board title: 'Jobs at Helium 10'. Parent HTTP 200; validated adapter-compatible payload; 3 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/helium10/jobs?content=true. Context: Disabled pending board identity verification; official career page and Greenhouse-branded board establish the mapping. Next: Enable Greenhouse board helium10 and monitor counts.",
+      "provider": "greenhouse",
+      "board": "helium10"
     },
     {
       "name": "Hopin",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:36:45Z: inactive_or_acquired. Hopin rebranded/acquired as RingCentral Events; careers now under RingCentral. Evidence: https://www.ringcentral.com/company/careers/overview.html. Next: Do not track standalone Hopin; use RingCentral only with explicit scope."
     },
     {
       "name": "Hubspot",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; 496832-byte careers HTML; no recognized ATS link in common link attributes; listings are presented in page content. Evidence: https://www.hubspot.com/careers/jobs. Next: inspect embedded listing API and actual apply destinations"
     },
     {
       "name": "Hugging Face",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://apply.workable.com/huggingface/?lng=en",
+      "notes": "Verified 2026-10-03T22:39:35.678838+00:00; Official Workable board branded Huggingface; API returns 8-item postings array. Parent hosted board title: 'Hugging Face - Current Openings'. Parent HTTP 200; validated adapter-compatible payload; 8 jobs. Feed: https://apply.workable.com/api/v1/widget/accounts/huggingface?details=false. Context: Official Workable board branded Huggingface; API returns 8-item postings array. Next: No immediate action; parent should independently revalidate before registry merge.",
+      "provider": "workable",
+      "board": "huggingface"
     },
     {
       "name": "Illumio",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/illumio",
+      "notes": "Verified 2026-10-03: feed JSON shape and 65 job records/listing URLs validated. Hosted ATS title evidence: 'Illumio Jobs'. Parent rechecked nonempty JSON feed on 2026-10-03 (65 jobs): https://api.ashbyhq.com/posting-api/job-board/illumio?includeCompensation=true",
+      "provider": "ashby",
+      "board": "illumio"
     },
     {
       "name": "IMC Trading",
@@ -859,15 +935,19 @@
     },
     {
       "name": "InfluxData",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.influxdata.com/careers/",
+      "notes": "Verified 2026-10-03T22:44:02.724539+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for ashby/Influxdata. Parent hosted board title: 'InfluxData Jobs'. Parent HTTP 200; validated adapter-compatible payload; 5 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/Influxdata?includeCompensation=true. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "ashby",
+      "board": "Influxdata"
     },
     {
       "name": "insightsoftware",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.insightsoftware.com/careers/",
+      "notes": "Verified 2026-10-03T22:44:04.151308+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for workday/magnitudesoftware/wd1/External. Parent HTTP 200; validated adapter-compatible payload; 89 jobs (Workday total; first page payload checked, production adapter handles full pagination). Feed: https://magnitudesoftware.wd1.myworkdayjobs.com/wday/cxs/magnitudesoftware/External/jobs. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "workday",
+      "board": "magnitudesoftware/wd1/External"
     },
     {
       "name": "Instacart",
@@ -913,25 +993,29 @@
       "name": "JupiterOne",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; careers page loads Workable embed.js; Workable platform observed, but account/board slug not exposed by extracted links. Evidence: https://www.jupiterone.com/careers. Next: inspect Workable embed config for account slug then validate Workable feed"
     },
     {
       "name": "Karat",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/karat",
+      "notes": "Verified 2026-10-03: feed JSON shape and 10 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at Karat'. Parent rechecked nonempty JSON feed on 2026-10-03 (10 jobs): https://boards-api.greenhouse.io/v1/boards/karat/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "karat"
     },
     {
       "name": "Kilo Code",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:30.468831+00:00: custom_careers. Company site has call for engineers, no standard ATS feed; specific role listing links Rippling/Anaconda, potential employer boundary issue. Evidence: https://kilo.ai/call. Next: Follow official careers link and verify current feed endpoint/payload."
     },
     {
       "name": "Kit",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://kit.com/careers",
+      "notes": "Verified 2026-10-03T22:44:03.525586+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for ashby/kit. Parent hosted board title: 'Kit Jobs'. Parent HTTP 200; validated adapter-compatible payload; 7 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/kit?includeCompensation=true. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "ashby",
+      "board": "kit"
     },
     {
       "name": "KLA",
@@ -943,15 +1027,25 @@
     },
     {
       "name": "Kraken",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/kraken.com",
+      "notes": "Verified 2026-10-03T22:39:41.044966+00:00; Kraken official careers page links Ashby; hosted board is Kraken. Parent hosted board title: 'Kraken Jobs'. Parent HTTP 200; validated adapter-compatible payload; 79 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/kraken.com?includeCompensation=true. Context: Supported Ashby source omitted; slug includes .com. Next: Configure Ashby slug kraken.com; preserve dot.",
+      "provider": "ashby",
+      "board": "kraken.com"
+    },
+    {
+      "name": "LangChain",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "langchain",
+      "source": "https://www.langchain.com/careers",
+      "notes": "Official careers page links to Ashby; feed returned 102 postings including Python OSS and engineering roles. Parent rechecked nonempty JSON feed on 2026-10-03 (102 jobs): https://api.ashbyhq.com/posting-api/job-board/langchain"
     },
     {
       "name": "League",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: blocked. HTTP 403 Cloudflare “Just a moment” challenge on official careers page. Evidence: https://league.com/careers/. Next: use official alternate route / search indexed openings; ATS cannot be determined from blocked fetch"
     },
     {
       "name": "Linear",
@@ -965,7 +1059,7 @@
       "name": "Loft",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:30.469896+00:00: identity_conflict. Fetched KnitWell/LOFT apparel careers with multiple retail Workday boards, but CSV name Loft may refer to a technology employer. Neither intended employer identity nor a single authoritative board is established. Evidence: https://jobs.knitwellgroup.com/loft. Next: Confirm intended Loft employer domain first; do not add a broad apparel-parent board under this ambiguous name."
     },
     {
       "name": "Lokalise",
@@ -979,13 +1073,13 @@
       "name": "Loom",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:32.383588+00:00: unresolved. Parent fetched 159500 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://www.loom.com/careers. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Loops",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:36:45Z: custom_careers. Official Loops.so page explicitly says no open roles; title collision with other companies called Loops. Evidence: https://loops.so/careers. Next: Document and implement custom careers feed support; no current runtime mapping. Represent valid empty only if product identity is confirmed; otherwise defer mapping."
     },
     {
       "name": "Lyft",
@@ -999,7 +1093,7 @@
       "name": "Marqeta",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; careers page served but no recognized ATS URLs in HTML links. Evidence: https://www.marqeta.com/company/careers. Next: inspect embedded role data and application URLs"
     },
     {
       "name": "Marshall Wace",
@@ -1029,7 +1123,7 @@
       "name": "Mastodon",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:37:39.137713+00:00: custom_careers. Official non-profit careers page explicitly says no positions available; no external ATS feed. Evidence: https://joinmastodon.org/careers. Next: Document and implement custom careers feed support; no current runtime mapping. No immediate action; parent should independently revalidate before registry merge."
     },
     {
       "name": "Match Group",
@@ -1041,15 +1135,17 @@
     },
     {
       "name": "Mattermost",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/mattermost",
+      "notes": "Verified 2026-10-03: feed JSON shape and 14 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at Mattermost'. Parent rechecked nonempty JSON feed on 2026-10-03 (14 jobs): https://boards-api.greenhouse.io/v1/boards/mattermost/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "mattermost"
     },
     {
       "name": "Medallia",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:32.490374+00:00: unresolved. Parent fetched 411140 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. Platform clues: [\"https://app.jibecdn.com/')\", \"https://app.jibecdn.com/';\", 'https://app.jibecdn.com/prod/cdn.js']. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://jobs.medallia.com/. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Mercor",
@@ -1061,9 +1157,11 @@
     },
     {
       "name": "Metabase",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.lever.co/metabase",
+      "notes": "Verified 2026-10-03: feed JSON shape and 18 job records/listing URLs validated. Hosted ATS title evidence: 'Metabase'. Parent rechecked nonempty JSON feed on 2026-10-03 (18 jobs): https://api.lever.co/v0/postings/metabase?mode=json",
+      "provider": "lever",
+      "board": "metabase"
     },
     {
       "name": "Micron Technology",
@@ -1115,27 +1213,31 @@
     },
     {
       "name": "Mozilla",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/mozilla",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (90 jobs): https://boards-api.greenhouse.io/v1/boards/mozilla/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "mozilla"
     },
     {
       "name": "Mr Yum",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:33.978455+00:00: blocked. Parent official/candidate careers request returned HTTP 403; source access is blocked, not proven unsupported. Prior finding: No authoritative current careers page/ATS board established; historic third-party hiring only. Evidence: https://app.welcometothejungle.com/companies/Mr-Yum. Next: Use an accessible official alternative or an authorized browser session to inspect current application links; do not infer no vacancies."
     },
     {
       "name": "Mural",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/mural",
+      "notes": "Verified 2026-10-03T22:40:40.636273+00:00; Direct HTTP fetch of official careers URL https://www.mural.co/careers; final page/response inspected. Official careers HTML links jobs.ashbyhq.com/mural; Ashby posting API HTTP 200 JSON with jobs array length 13, apiVersion present. Board and payload verified. Parent hosted board title: 'Mural Jobs'. Parent HTTP 200; validated adapter-compatible payload; 13 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/mural?includeCompensation=true. Context: Previously unresolved due to provider/board not established; direct inspection of official careers page established employer-linked ATS board, and direct API request validated its supported adapter payload. Next: Map provider=ashby, board=mural; run project adapter fetch and confirm normalized snapshot before enabling.",
+      "provider": "ashby",
+      "board": "mural"
     },
     {
       "name": "NCX",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:30.470661+00:00: custom_careers. Official NCX Inc. careers page lists roles directly; no ATS feed established. Evidence: https://www.ncxinc.com/careers/. Next: Follow official careers link and verify current feed endpoint/payload."
     },
     {
       "name": "Neo4j",
@@ -1146,16 +1248,26 @@
       "notes": "Board mapping imported from internship-watcher README-linked boards.json; documented as live-verified."
     },
     {
+      "name": "Neon",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "neon",
+      "source": "https://neon.com/careers",
+      "notes": "Official careers page points to Ashby; feed returned 4 postings, including software engineering roles. Parent rechecked nonempty JSON feed on 2026-10-03 (4 jobs): https://api.ashbyhq.com/posting-api/job-board/neon"
+    },
+    {
       "name": "Netlify",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.netlify.com/careers/",
+      "notes": "Verified 2026-10-03. Official careers page links postings to Greenhouse; feed contains Netlify roles. Parent rechecked nonempty JSON feed on 2026-10-03 (5 jobs): https://boards-api.greenhouse.io/v1/boards/netlify/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "netlify"
     },
     {
       "name": "Newfront",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:50:00Z: inactive_or_acquired. Official careers page says Newfront has officially joined WTW; independent employer status is superseded. Evidence: https://www.newfront.com/careers. Next: Check WTW roles for legacy Newfront positions; only add a mapping if official application links support it."
     },
     {
       "name": "Notion",
@@ -1169,7 +1281,7 @@
       "name": "Numbrs",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:34.085496+00:00: unresolved. Name conflates Numbrs Personal Finance AG and Numbrs Self Custody; third-party VC board only. Evidence: https://jobs.fin.capital/jobs/numbrs-self-custody. Next: Resolve target legal entity and follow its official careers link."
     },
     {
       "name": "NVIDIA",
@@ -1191,25 +1303,27 @@
       "name": "Obsidian",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:40.637735+00:00: identity_conflict. Live obsidiansecurity Greenhouse board identifies Obsidian Security; CSV says only Obsidian and may instead mean the Obsidian note-taking app. Intended employer domain is not established. Evidence: https://boards.greenhouse.io/embed/job_board/js?for=obsidiansecurity. Next: Confirm intended Obsidian company domain before enabling Obsidian Security; do not substitute similarly named employers."
     },
     {
       "name": "OKcoin",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:30.471713+00:00: unresolved. Could not establish current official careers URL or whether OKcoin roles now belong to OKX; identity/current brand unresolved. Evidence: No authoritative URL established. Next: Follow official careers link and verify current feed endpoint/payload."
     },
     {
       "name": "Okta",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/okta",
+      "notes": "Verified 2026-10-03: feed JSON shape and 368 job records/listing URLs validated. Hosted ATS title evidence: 'Careers - Jobs at the Leader in Identity and Access Management | Okta'. Parent rechecked nonempty JSON feed on 2026-10-03 (368 jobs): https://boards-api.greenhouse.io/v1/boards/okta/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "okta"
     },
     {
       "name": "OnDeck",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:32.603581+00:00: unresolved. Parent fetched 32293 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://www.beondeck.com/careers. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "OpenAI",
@@ -1221,9 +1335,11 @@
     },
     {
       "name": "OpenSea",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/opensea",
+      "notes": "Verified 2026-10-03: feed JSON shape and 2 job records/listing URLs validated. Hosted ATS title evidence: 'OpenSea Jobs'. Parent rechecked nonempty JSON feed on 2026-10-03 (2 jobs): https://api.ashbyhq.com/posting-api/job-board/opensea?includeCompensation=true",
+      "provider": "ashby",
+      "board": "opensea"
     },
     {
       "name": "Optiver",
@@ -1237,31 +1353,39 @@
       "name": "Oracle",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:34.129775+00:00: custom_careers. Oracle Cloud HCM Candidate Experience portal; not Workday or supported provider. Evidence: https://eeho.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/jobsearch/jobs. Next: Research Oracle HCM public API/pagination before adapter decision."
     },
     {
       "name": "Osano",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/osano/jobs/5435835008",
+      "notes": "Verified 2026-10-03T22:40:40.638278+00:00; Direct HTTP fetch of official careers URL https://www.osano.com/company/careers; final page/response inspected. Official careers page directly links Greenhouse individual postings under job-boards.greenhouse.io/osano; Greenhouse API HTTP 200 with jobs array length 12 and meta. Parent hosted board title: 'Jobs at Osano'. Parent HTTP 200; validated adapter-compatible payload; 12 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/osano/jobs?content=true. Context: Previously unresolved due to provider/board not established; direct inspection of official careers page established employer-linked ATS board, and direct API request validated its supported adapter payload. Next: Map provider=greenhouse, board=osano; run project adapter fetch and confirm normalized snapshot before enabling.",
+      "provider": "greenhouse",
+      "board": "osano"
     },
     {
       "name": "Pacvue",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://pacvue.com/about/careers/",
+      "notes": "Verified 2026-10-03T22:39:36.050716+00:00; Official careers page links Greenhouse board branded Pacvue; API jobs array validated, 22 postings. Parent hosted board title: 'Jobs at Pacvue'. Parent HTTP 200; validated adapter-compatible payload; 22 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/pacvue/jobs?content=true. Context: Official careers page links Greenhouse board branded Pacvue; API jobs array validated, 22 postings. Next: No immediate action; parent should independently revalidate before registry merge.",
+      "provider": "greenhouse",
+      "board": "pacvue"
     },
     {
       "name": "Pagerduty",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/pagerduty",
+      "notes": "Verified 2026-10-03: feed JSON shape and 53 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at PagerDuty'. Parent rechecked nonempty JSON feed on 2026-10-03 (53 jobs): https://boards-api.greenhouse.io/v1/boards/pagerduty/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "pagerduty"
     },
     {
       "name": "Pagos",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://pagos.ai/careers",
+      "notes": "Verified 2026-10-03T22:44:03.933287+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for ashby/Pagos. Parent hosted board title: 'Pagos Jobs'. Parent HTTP 200; validated adapter-compatible payload; 0 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/Pagos?includeCompensation=true. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "ashby",
+      "board": "Pagos"
     },
     {
       "name": "Palantir",
@@ -1281,15 +1405,17 @@
     },
     {
       "name": "PandaDoc",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/pandadoc",
+      "notes": "Verified 2026-10-03: feed JSON shape and 10 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at PandaDoc'. Parent rechecked nonempty JSON feed on 2026-10-03 (10 jobs): https://boards-api.greenhouse.io/v1/boards/pandadoc/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "pandadoc"
     },
     {
       "name": "Parabol",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:34.167136+00:00: unresolved. Parent fetched 76277 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. Official hiring/speculative application exists but no current job listing board confirmed. Evidence: https://www.parabol.co/join/speculative-application/. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "PEAK6",
@@ -1317,9 +1443,11 @@
     },
     {
       "name": "Plaid",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/plaid",
+      "notes": "Verified 2026-10-03: feed JSON shape and 119 job records/listing URLs validated. Hosted ATS title evidence: 'Plaid Jobs'. Parent rechecked nonempty JSON feed on 2026-10-03 (119 jobs): https://api.ashbyhq.com/posting-api/job-board/plaid?includeCompensation=true",
+      "provider": "ashby",
+      "board": "plaid"
     },
     {
       "name": "Point72",
@@ -1331,33 +1459,43 @@
     },
     {
       "name": "Posit",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/embed/job_board/js?for=rstudio",
+      "notes": "Verified 2026-10-03T22:40:40.638969+00:00; Direct HTTP fetch of official careers URL https://posit.co/about/careers; final page/response inspected. Official careers page embeds Greenhouse board script for rstudio; Greenhouse API HTTP 200 jobs array length 7 and meta. Parent hosted board title: 'Careers at Posit | Remote-First Open Source Data Science Jobs'. Parent HTTP 200; validated adapter-compatible payload; 7 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/rstudio/jobs?content=true. Context: Previously unresolved due to provider/board not established; direct inspection of official careers page established employer-linked ATS board, and direct API request validated its supported adapter payload. Next: Map provider=greenhouse, board=rstudio; run project adapter fetch and confirm normalized snapshot before enabling.",
+      "provider": "greenhouse",
+      "board": "rstudio"
+    },
+    {
+      "name": "PostHog",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "posthog",
+      "source": "https://posthog.com/careers",
+      "notes": "Official careers page links to Ashby; feed returned 8 postings including backend, product engineering, and SRE roles. Parent rechecked nonempty JSON feed on 2026-10-03 (8 jobs): https://api.ashbyhq.com/posting-api/job-board/posthog"
     },
     {
       "name": "ProjectDiscovery",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:30.472270+00:00: unresolved. Parent fetched 650193 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. Could not identify an authoritative current careers page/feed; third-party listings are stale/removed. Evidence: https://projectdiscovery.io/. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Protocol Labs",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:32.672617+00:00: unresolved. Parent fetched 26946 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://pl.xyz/join/. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Prufrock Ventures",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:36:45Z: unsupported_provider. Official company site links Breezy HR; board feed currently empty. Breezy unsupported. Evidence: https://prufrock-ventures.breezy.hr/. Next: Document and implement breezy feed support; no current runtime mapping. If needed, implement Breezy feed adapter; do not classify unsupported until payload documented."
     },
     {
       "name": "Quora",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: blocked. HTTP 403 Cloudflare challenge at official careers.quora.com; board could not be discovered from page. Evidence: https://careers.quora.com/. Next: follow official openings via accessible Quora careers links or retry alternate endpoint"
     },
     {
       "name": "Ramp",
@@ -1369,9 +1507,11 @@
     },
     {
       "name": "Red Hat",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.redhat.com/en/jobs",
+      "notes": "Verified 2026-10-03T22:44:02.721594+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for workday/redhat/wd5/jobs. Parent HTTP 200; validated adapter-compatible payload; 137 jobs (Workday total; first page payload checked, production adapter handles full pagination). Feed: https://redhat.wd5.myworkdayjobs.com/wday/cxs/redhat/jobs/jobs. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "workday",
+      "board": "redhat/wd5/jobs"
     },
     {
       "name": "Reddit",
@@ -1385,19 +1525,23 @@
       "name": "Refersion",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:32.751636+00:00: unresolved. Parent careers URL returned HTTP 404; current authoritative careers destination remains unverified. Candidate careers URL returned HTTP 403; official current destination/board remains unverified. Evidence: https://www.refersion.com/careers/. Next: Navigate from current official company homepage to the actual careers URL; stop retrying this 404 path."
     },
     {
       "name": "RelationalAI",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/relationalai",
+      "notes": "Verified 2026-10-03: feed JSON shape and 3 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at RelationalAI'. Parent rechecked nonempty JSON feed on 2026-10-03 (3 jobs): https://boards-api.greenhouse.io/v1/boards/relationalai/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "relationalai"
     },
     {
       "name": "Relativity Space",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.relativityspace.com/jobs",
+      "notes": "Verified 2026-10-03T22:39:41.045309+00:00; Official jobs page identifies Relativity Space and directs candidates to official listings; Greenhouse postings brand Relativity Space. Parent hosted board title: 'Careers'. Parent HTTP 200; validated adapter-compatible payload; 350 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/relativity/jobs?content=true. Context: Supported Greenhouse board omitted. Next: Configure Greenhouse board relativity.",
+      "provider": "greenhouse",
+      "board": "relativity"
     },
     {
       "name": "Remote",
@@ -1417,15 +1561,17 @@
     },
     {
       "name": "Rithum",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/embed/job_board/js?for=rithum",
+      "notes": "Verified 2026-10-03T22:40:40.639420+00:00; Direct HTTP fetch of official careers URL https://www.rithum.com/company/careers/job-opportunities/; final page/response inspected. Official careers page embeds Greenhouse board script for rithum; Greenhouse API HTTP 200 jobs array length 15 and meta. Parent hosted board title: 'Jobs at Rithum'. Parent HTTP 200; validated adapter-compatible payload; 15 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/rithum/jobs?content=true. Context: Previously unresolved due to provider/board not established; direct inspection of official careers page established employer-linked ATS board, and direct API request validated its supported adapter payload. Next: Map provider=greenhouse, board=rithum; run project adapter fetch and confirm normalized snapshot before enabling.",
+      "provider": "greenhouse",
+      "board": "rithum"
     },
     {
       "name": "Robin Healthcare",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:30.905913+00:00: unresolved. Legacy company evidence only; current official careers URL unavailable and company operating/acquisition status unclear. Evidence: https://robin.co/careers. Next: Follow official careers link and verify current feed endpoint/payload."
     },
     {
       "name": "Robinhood",
@@ -1447,25 +1593,29 @@
       "name": "Root Insurance",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:32.774930+00:00: unresolved. Parent fetched 181919 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. Platform clues: ['https://app.rippling.com/legal/cookie-notice', 'https://app.rippling.com/legal/privacy', 'https://app.rippling.com/legal/user']. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://ats.rippling.com/joinroot/jobs. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "RootstockLabs",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "http://job-boards.eu.greenhouse.io/rootstocklabsltd",
+      "notes": "Verified 2026-10-03T22:39:41.945331+00:00; Official Rootstock Labs careers links EU Greenhouse board for RootstockLabs Ltd. Parent hosted board title: 'Jobs at RootstockLabs Ltd.'. Parent HTTP 200; validated adapter-compatible payload; 3 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/rootstocklabsltd/jobs?content=true. Context: Greenhouse EU-hosted board; attempted API hostname boards-api.eu.greenhouse.io did not resolve; standard endpoint validates. Next: Configure Greenhouse board rootstocklabsltd; validate standard boards-api endpoint in deployment.",
+      "provider": "greenhouse",
+      "board": "rootstocklabsltd"
     },
     {
       "name": "runZero",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/runzero",
+      "notes": "Verified 2026-10-03: feed JSON shape and 1 job records/listing URLs validated. Hosted ATS title evidence: 'Careers - Join the team! - runZero'. Parent rechecked nonempty JSON feed on 2026-10-03 (1 jobs): https://boards-api.greenhouse.io/v1/boards/runzero/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "runzero"
     },
     {
       "name": "SafetyWing",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unsupported_provider. Official Pinpoint-hosted careers page HTTP 200; links its /en/jobs.rss feed. RSS endpoint HTTP 200 XML. Pinpoint is not among implemented providers. Evidence: https://safetywing.pinpointhq.com/en. Next: add Pinpoint adapter or retain unresolved; parse RSS only after adapter capability review"
     },
     {
       "name": "Salesforce",
@@ -1509,9 +1659,19 @@
     },
     {
       "name": "SecurityScorecard",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/securityscorecard",
+      "notes": "Verified 2026-10-03: feed JSON shape and 13 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at SecurityScorecard'. Parent rechecked nonempty JSON feed on 2026-10-03 (13 jobs): https://boards-api.greenhouse.io/v1/boards/securityscorecard/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "securityscorecard"
+    },
+    {
+      "name": "Sentry",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "sentry",
+      "source": "https://sentry.io/careers/",
+      "notes": "Official careers page links to Ashby; feed returned 41 postings including ML and developer experience engineering. Parent rechecked nonempty JSON feed on 2026-10-03 (41 jobs): https://api.ashbyhq.com/posting-api/job-board/sentry"
     },
     {
       "name": "ServiceNow",
@@ -1525,37 +1685,43 @@
       "name": "Shogun",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:30.933622+00:00: custom_careers. Official careers page says check back for upcoming roles; no feed endpoint exposed. Evidence: https://getshogun.com/careers. Next: Follow official careers link and verify current feed endpoint/payload."
     },
     {
       "name": "Shopify",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:32.817148+00:00: unresolved. Parent fetched 582576 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://www.shopify.com/careers. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Shopmonkey",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/shopmonkey/jobs/7984469003?gh_jid=7984469003",
+      "notes": "Verified 2026-10-03T22:39:42.645484+00:00; Official Shopmonkey careers page and linked Greenhouse job identifies Shopmonkey. Parent hosted board title: 'Shopmonkey Job Openings | Shopmonkey Careers | Shopmonkey'. Parent HTTP 200; validated adapter-compatible payload; 7 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/shopmonkey/jobs?content=true. Context: Official careers UI currently renders zero while Greenhouse feed and current individual official-linked listing exist (site rendering mismatch). Next: Configure Greenhouse board shopmonkey; monitor discrepancy between rendered page and API.",
+      "provider": "greenhouse",
+      "board": "shopmonkey"
     },
     {
       "name": "SingleStore",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/singlestore",
+      "notes": "Verified 2026-10-03: feed JSON shape and 40 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at SingleStore'. Parent rechecked nonempty JSON feed on 2026-10-03 (40 jobs): https://boards-api.greenhouse.io/v1/boards/singlestore/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "singlestore"
     },
     {
       "name": "Skillshare",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://apply.workable.com/skillshare/",
+      "notes": "Verified 2026-10-03T22:44:04.212125+00:00; Official careers redirect establishes Workable account skillshare; previous probe used wrong v3 path instead of implemented v1 widget API. Parent hosted board title: 'Skillshare - Current Openings'. Parent HTTP 200; validated adapter-compatible payload; 5 jobs. Feed: https://apply.workable.com/api/v1/widget/accounts/skillshare?details=false. Context: Official careers redirect establishes Workable account skillshare; previous probe used wrong v3 path instead of implemented v1 widget API. Next: Validate and merge adapter mapping.",
+      "provider": "workable",
+      "board": "skillshare"
     },
     {
       "name": "Slack",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:37:39.137713+00:00: identity_conflict. Slack official careers points into Salesforce family; no distinct Slack feed verified, avoid conflating parent roles. Evidence: https://slack.com/careers. Next: Confirm legacy/parent status with official company source."
     },
     {
       "name": "Snowflake",
@@ -1601,7 +1767,7 @@
       "name": "Spruce",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:32.842804+00:00: unresolved. Parent fetched 121785 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. Candidate careers URL returned HTTP 403; official current destination/board remains unverified. Evidence: https://getspruce.com/careers/. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Squarepoint Capital",
@@ -1613,9 +1779,11 @@
     },
     {
       "name": "Stedi",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/stedi",
+      "notes": "Verified 2026-10-03: feed JSON shape and 16 job records/listing URLs validated. Hosted ATS title evidence: 'Stedi Jobs'. Parent rechecked nonempty JSON feed on 2026-10-03 (16 jobs): https://api.ashbyhq.com/posting-api/job-board/stedi?includeCompensation=true",
+      "provider": "ashby",
+      "board": "stedi"
     },
     {
       "name": "Stripe",
@@ -1643,33 +1811,39 @@
     },
     {
       "name": "Superhuman",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/superhuman%20platform%20inc",
+      "notes": "Verified 2026-10-03T22:39:42.660368+00:00; Official Superhuman careers links hosted board; roles are Superhuman. Parent hosted board title: 'Superhuman Jobs'. Parent HTTP 200; validated adapter-compatible payload; 68 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/superhuman%20platform%20inc?includeCompensation=true. Context: Supported Ashby board, slug includes spaces; prior unresolved status reflected unverified mapping. Next: Configure Ashby board exact slug \"superhuman platform inc\" (URL-encoded by client).",
+      "provider": "ashby",
+      "board": "superhuman platform inc"
     },
     {
       "name": "Superhuman Docs",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: identity_conflict. Superhuman parent is now mapped via its branded Ashby board. CSV Superhuman Docs appears to be a product/brand, not an independently verified employer feed; enabling the parent board again would duplicate work/jobs. Evidence: https://superhuman.com/company/careers/jobs. Next: Confirm Coda/Superhuman Docs brand identity and role filtering on existing Superhuman source; avoid a duplicate identical board mapping."
     },
     {
       "name": "SUSE",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.suse.com/careers/",
+      "notes": "Verified 2026-10-03T22:44:02.722581+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for workday/suse/wd3/Jobsatsuse. Parent HTTP 200; validated adapter-compatible payload; 26 jobs (Workday total; first page payload checked, production adapter handles full pagination). Feed: https://suse.wd3.myworkdayjobs.com/wday/cxs/suse/Jobsatsuse/jobs. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "workday",
+      "board": "suse/wd3/Jobsatsuse"
     },
     {
       "name": "Syndicate",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:33.178249+00:00: unresolved. Parent fetched 53451 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://syndicate.io/careers. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Sysdig",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.lever.co/sysdig",
+      "notes": "Verified 2026-10-03T22:39:42.709975+00:00; Official Sysdig open-positions page links Lever hosted careers; board name Sysdig. Parent hosted board title: 'Sysdig'. Parent HTTP 200; validated adapter-compatible payload; 29 jobs. Feed: https://api.lever.co/v0/postings/sysdig?mode=json. Context: Supported Lever board omitted. Next: Configure Lever board sysdig.",
+      "provider": "lever",
+      "board": "sysdig"
     },
     {
       "name": "T-Mobile",
@@ -1683,55 +1857,81 @@
       "name": "Tabular",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. DNS resolution failed for tabular.io (ENOTFOUND) during direct fetch; page availability and board not verified. Evidence: https://tabular.io/careers. Next: confirm canonical domain via authoritative company source then retry"
     },
     {
       "name": "Teamshares",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.teamshares.com/careers",
+      "notes": "Verified 2026-10-03T22:39:36.088040+00:00; Official careers page and Lever board branding match; API request timed out during bounded check. Parent hosted board title: 'Teamshares'. Parent HTTP 200; validated adapter-compatible payload; 22 jobs. Feed: https://api.lever.co/v0/postings/teamshares?mode=json. Context: Official careers page and Lever board branding match; API request timed out during bounded check. Next: Follow official careers link and verify current feed endpoint/payload.",
+      "provider": "lever",
+      "board": "teamshares"
     },
     {
       "name": "Teleport",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://goteleport.com/careers/",
+      "notes": "Verified 2026-10-03T22:44:04.035416+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for ashby/goteleport. Parent hosted board title: 'Teleport Jobs'. Parent HTTP 200; validated adapter-compatible payload; 24 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/goteleport?includeCompensation=true. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "ashby",
+      "board": "goteleport"
+    },
+    {
+      "name": "Temporal",
+      "enabled": true,
+      "provider": "ashby",
+      "board": "temporal",
+      "source": "https://temporal.io/careers",
+      "notes": "Official careers page links to Ashby; feed returned 64 postings. Parent rechecked nonempty JSON feed on 2026-10-03 (64 jobs): https://api.ashbyhq.com/posting-api/job-board/temporal"
     },
     {
       "name": "The Browser Company",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/the%20browser%20company",
+      "notes": "Verified 2026-10-03T22:39:43.694030+00:00; Official careers page points to hosted Ashby board; company identity matches. Parent hosted board title: 'The Browser Company Jobs'. Parent HTTP 200; validated adapter-compatible payload; 4 jobs. Feed: https://api.ashbyhq.com/posting-api/job-board/the%20browser%20company?includeCompensation=true. Context: Supported Ashby board slug has spaces; no mapping in registry. Next: Configure exact Ashby slug the browser company.",
+      "provider": "ashby",
+      "board": "the browser company"
     },
     {
       "name": "Thumbtack",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/thumbtack",
+      "notes": "Verified 2026-10-03: feed JSON shape and 57 job records/listing URLs validated. Hosted ATS title evidence: 'Thumbtack Jobs'. Parent rechecked nonempty JSON feed on 2026-10-03 (57 jobs): https://api.ashbyhq.com/posting-api/job-board/thumbtack?includeCompensation=true",
+      "provider": "ashby",
+      "board": "thumbtack"
+    },
+    {
+      "name": "Together AI",
+      "enabled": true,
+      "provider": "greenhouse",
+      "board": "togetherai",
+      "source": "https://www.together.ai/careers",
+      "notes": "Official careers page links Greenhouse; API returned 77 postings with employer identity in returned fields. Parent rechecked nonempty JSON feed on 2026-10-03 (77 jobs): https://boards-api.greenhouse.io/v1/boards/togetherai/jobs?content=true"
     },
     {
       "name": "Toggl",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; 377393-byte careers HTML; no recognized ATS URL in href/src/action attributes. Evidence: https://toggl.com/jobs/. Next: inspect role application links / embedded scripts for board"
     },
     {
       "name": "Toptal",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.lever.co/toptal",
+      "notes": "Verified 2026-10-03: feed JSON shape and 32 job records/listing URLs validated. Hosted ATS title evidence: 'Toptal'. Parent rechecked nonempty JSON feed on 2026-10-03 (32 jobs): https://api.lever.co/v0/postings/toptal?mode=json",
+      "provider": "lever",
+      "board": "toptal"
     },
     {
       "name": "Trust Machines",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:31.181979+00:00: unresolved. Parent fetched 14378 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. USV portfolio jobs page is not proof of current employer-owned ATS; source shows historical hiring only. Evidence: https://jobs.usv.com/jobs/trust-machines. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Turso",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:33.265216+00:00: unresolved. Parent fetched 152683 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://turso.tech/careers. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Twilio",
@@ -1751,33 +1951,39 @@
     },
     {
       "name": "Unqork",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://boards.greenhouse.io/unqork",
+      "notes": "Verified 2026-10-03. Company careers page links to hosted ATS board; direct public JSON feed returned jobs. Parent rechecked nonempty JSON feed on 2026-10-03 (1 jobs): https://boards-api.greenhouse.io/v1/boards/unqork/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "unqork"
     },
     {
       "name": "Upwork",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/upwork",
+      "notes": "Verified 2026-10-03: feed JSON shape and 7 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at Upwork'. Parent rechecked nonempty JSON feed on 2026-10-03 (7 jobs): https://boards-api.greenhouse.io/v1/boards/upwork/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "upwork"
     },
     {
       "name": "Varsity Tutors",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:34.168162+00:00: custom_careers. Hiring entity is Nerdy (parent behind Varsity Tutors); custom Nerdy careers platform. Evidence: https://careers.nerdy.com/jobs. Next: Track Nerdy rather than duplicate Varsity Tutors or implement custom career API."
     },
     {
       "name": "Veeva Systems",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; 127683-byte careers HTML; no recognized ATS URL extracted. Evidence: https://careers.veeva.com/. Next: inspect openings links and any Workday/other ATS destination"
     },
     {
       "name": "Vercel",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://vercel.com/careers",
+      "notes": "Verified 2026-10-03. Official careers page links to Greenhouse; feed contains Vercel roles. Parent rechecked nonempty JSON feed on 2026-10-03 (85 jobs): https://boards-api.greenhouse.io/v1/boards/vercel/jobs?content=false",
+      "provider": "greenhouse",
+      "board": "vercel"
     },
     {
       "name": "Visa",
@@ -1789,21 +1995,27 @@
     },
     {
       "name": "VSCO",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.vsco.co/about/careers",
+      "notes": "Verified 2026-10-03T22:39:36.404852+00:00; Official careers page; Greenhouse board branded VSCO; API validated jobs array (7). Parent hosted board title: 'Jobs at VSCO'. Parent HTTP 200; validated adapter-compatible payload; 7 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/vsco39/jobs?content=true. Context: Official careers page; Greenhouse board branded VSCO; API validated jobs array (7). Next: No immediate action; parent should independently revalidate before registry merge.",
+      "provider": "greenhouse",
+      "board": "vsco39"
     },
     {
       "name": "Wave",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.waveapps.com/about-us/culture",
+      "notes": "Verified 2026-10-03T22:44:04.077918+00:00; Parent fetched official careers page HTTP 200; observed current ATS link for lever/waveapps. Parent hosted board title: 'Wave HQ'. Parent HTTP 200; validated adapter-compatible payload; 7 jobs. Feed: https://api.lever.co/v0/postings/waveapps?mode=json. Context: Current official ATS link was present in HTML/embedded script but had not been extracted by the prior investigation. Next: Validate adapter feed and merge verified source.",
+      "provider": "lever",
+      "board": "waveapps"
     },
     {
       "name": "Webflow",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/webflow",
+      "notes": "Verified 2026-10-03: feed JSON shape and 25 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at Webflow'. Parent rechecked nonempty JSON feed on 2026-10-03 (25 jobs): https://boards-api.greenhouse.io/v1/boards/webflow/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "webflow"
     },
     {
       "name": "Western Digital",
@@ -1817,25 +2029,29 @@
       "name": "Whatnot",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:36:45Z: unresolved. Ashby board verified; direct API request returned non-JSON/blocked to this probe. Parent adapter-path verification failed: HTTP Error 404: Not Found. Evidence: https://jobs.ashbyhq.com/whatnot. Next: Find current official application board or diagnose endpoint failure; do not retry the same candidate without new evidence."
     },
     {
       "name": "Wikimedia",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://job-boards.greenhouse.io/wikimedia",
+      "notes": "Verified 2026-10-03: feed JSON shape and 11 job records/listing URLs validated. Hosted ATS title evidence: 'Jobs at Wikimedia Foundation'. Parent rechecked nonempty JSON feed on 2026-10-03 (11 jobs): https://boards-api.greenhouse.io/v1/boards/wikimedia/jobs?content=true",
+      "provider": "greenhouse",
+      "board": "wikimedia"
     },
     {
       "name": "Wonolo",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:40:24+00:00: unresolved. HTTP 200; 164399-byte careers HTML; no recognized ATS URL extracted. Evidence: https://info.wonolo.com/careers/. Next: inspect openings/application links and embedded listings"
     },
     {
       "name": "Xapo",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://www.xapobank.com/en/careers",
+      "notes": "Verified 2026-10-03T22:39:36.461818+00:00; Official Xapo Bank careers page links Greenhouse board branded Xapo Bank; API validated 5 postings. Parent hosted board title: 'Jobs at Xapo Bank'. Parent HTTP 200; validated adapter-compatible payload; 5 jobs. Feed: https://boards-api.greenhouse.io/v1/boards/xapo61/jobs?content=true. Context: Official Xapo Bank careers page links Greenhouse board branded Xapo Bank; API validated 5 postings. Next: No immediate action; parent should independently revalidate before registry merge.",
+      "provider": "greenhouse",
+      "board": "xapo61"
     },
     {
       "name": "XTX Markets",
@@ -1849,13 +2065,15 @@
       "name": "Yelp",
       "enabled": false,
       "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "notes": "Research 2026-10-03T22:42:33.375200+00:00: unresolved. Parent fetched 303340 bytes of careers HTML with HTTP 200 but extracted no supported hosted-board mapping. Platform clues: ['https://yelp.jibeapply.com/talent/talentcommunity']. A careers URL was identified, but an authoritative ATS board/feed could not be verified. CSV tracking marked this entry disabled with no slug/provider, so platform support cannot be inferred. Evidence: https://www.yelp.careers/. Next: Inspect page scripts/embedded configuration and browser network requests for the actual listings/application source; simple HTML link extraction was inconclusive."
     },
     {
       "name": "Zapier",
-      "enabled": false,
-      "source": "companies.csv",
-      "notes": "Unresolved CSV entry; board slug/provider intentionally not guessed."
+      "enabled": true,
+      "source": "https://jobs.ashbyhq.com/zapier",
+      "notes": "Verified 2026-10-03: feed JSON shape and 11 job records/listing URLs validated. Hosted ATS title evidence: 'Zapier Jobs'. Parent rechecked nonempty JSON feed on 2026-10-03 (11 jobs): https://api.ashbyhq.com/posting-api/job-board/zapier?includeCompensation=true",
+      "provider": "ashby",
+      "board": "zapier"
     },
     {
       "name": "Zendesk",

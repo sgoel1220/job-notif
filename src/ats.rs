@@ -261,6 +261,7 @@ impl std::error::Error for AtsFetchError {}
 mod ashby;
 mod bamboohr;
 mod client;
+mod description;
 mod greenhouse;
 mod helpers;
 mod lever;
@@ -275,6 +276,7 @@ use ashby::*;
 use bamboohr::*;
 pub(crate) use client::{fetch_company_jobs, http_client_with_timeout};
 use client::{get_json, get_text, post_json};
+pub(crate) use description::fetch_job_description;
 use greenhouse::*;
 use helpers::*;
 use lever::*;

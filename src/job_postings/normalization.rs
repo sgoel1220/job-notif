@@ -116,6 +116,16 @@ impl JobPosting {
                 "additionalPlain",
             ],
         );
+        // Detail APIs often supply only HTML. Use a real HTML parser so entities,
+        // lists, and paragraph boundaries survive in the searchable text field.
+        if job.description_text.is_none() {
+            job.description_text = job.description.as_deref().and_then(|html| {
+                html2text::from_read(html.as_bytes(), 120)
+                    .ok()
+                    .map(|text| text.trim().to_owned())
+                    .filter(|text| !text.is_empty())
+            });
+        }
         job.location = merge_locations(job.location, &details_value);
         job.workplace_type = normalize_workplace(job.workplace_type, &details_value);
         job

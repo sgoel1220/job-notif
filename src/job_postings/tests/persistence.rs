@@ -71,3 +71,59 @@ async fn exact_source_reconciliation_rejects_mismatched_snapshot_before_deactiva
             .unwrap();
     assert!(old_active);
 }
+
+#[tokio::test]
+async fn snapshot_preserves_descriptions_when_detail_hydration_fails() {
+    let db = crate::test_database().await;
+    let mut job = JobPosting::basic(
+        "workday/example/wd5/Careers",
+        "/job/example",
+        "Engineer".into(),
+        "Example",
+        None,
+        None,
+        "https://example.test/job".into(),
+        serde_json::json!({}),
+    );
+    job.description = Some("<p>Original description</p>".into());
+    job.description_text = Some("Original description".into());
+    replace_source_snapshot(&db, "Example", &job.source, &[job.clone()])
+        .await
+        .unwrap();
+    for missing in [None, Some("  ".to_owned())] {
+        job.description = missing.clone();
+        job.description_text = missing;
+        replace_source_snapshot(&db, "Example", &job.source, &[job.clone()])
+            .await
+            .unwrap();
+        let stored: (Option<String>, Option<String>, bool) = sqlx::query_as(
+            "SELECT description, description_text, is_active FROM job_postings WHERE company = 'Example'"
+        ).fetch_one(&db).await.unwrap();
+        assert_eq!(
+            stored,
+            (
+                Some("<p>Original description</p>".into()),
+                Some("Original description".into()),
+                true
+            )
+        );
+    }
+    job.description = Some("<p>Updated description</p>".into());
+    job.description_text = Some("Updated description".into());
+    replace_source_snapshot(&db, "Example", &job.source, &[job.clone()])
+        .await
+        .unwrap();
+    let stored: (Option<String>, Option<String>) = sqlx::query_as(
+        "SELECT description, description_text FROM job_postings WHERE company = 'Example'",
+    )
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    assert_eq!(
+        stored,
+        (
+            Some("<p>Updated description</p>".into()),
+            Some("Updated description".into())
+        )
+    );
+}

@@ -1,5 +1,6 @@
 mod ats;
 mod company_registry;
+mod description_backfill;
 mod errors;
 mod job_postings;
 mod listings;
@@ -16,6 +17,31 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if args.iter().any(|a| a == "--backfill-descriptions") {
+        dotenvy::dotenv().ok();
+        let mut dry_run = false;
+        let mut company = None;
+        let mut i = 0;
+        while i < args.len() {
+            match args[i].as_str() {
+                "--backfill-descriptions" => (),
+                "--dry-run" => dry_run = true,
+                "--company" => {
+                    i += 1;
+                    company = Some(args.get(i).ok_or("--company needs a value")?.as_str());
+                }
+                flag => return Err(format!("unknown backfill option: {flag}").into()),
+            }
+            i += 1;
+        }
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let db = PgPoolOptions::new()
+            .max_connections(3)
+            .connect(&database_url)
+            .await?;
+        return description_backfill::run(&db, company, dry_run).await;
+    }
     dotenvy::dotenv().ok();
     let database_url = std::env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set to a PostgreSQL connection string");

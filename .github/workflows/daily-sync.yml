@@ -14,7 +14,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
     env:
       SYNC_URL: https://job-notif.onrender.com
     steps:
@@ -39,7 +39,7 @@ jobs:
           fi
           # No POST retries: the server may still be syncing after a connection failure.
           status=$(curl --silent --show-error \
-            --connect-timeout 30 --max-time 960 \
+            --connect-timeout 30 --max-time 2760 \
             --request POST --header "Authorization: Bearer $SYNC_BEARER_TOKEN" \
             --output /dev/null --write-out '%{http_code}' "$SYNC_URL/api/sync")
           case "$status" in
