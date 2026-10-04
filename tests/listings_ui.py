@@ -28,7 +28,8 @@ class ListingsUI(unittest.TestCase):
         cls.playwright.stop()
 
     def setUp(self):
-        self.page = self.browser.new_page()
+        self.context = self.browser.new_context()
+        self.page = self.context.new_page()
         self.total = 60
         self.requests = []
         self.job_url = "https://example.test/job"
@@ -49,12 +50,97 @@ class ListingsUI(unittest.TestCase):
             else:
                 route.fulfill(content_type="text/html", body=HTML)
 
-        self.page.route("http://job-notif.test/**", serve)
+        self.context.route("http://job-notif.test/**", serve)
         self.page.goto("http://job-notif.test/")
         self.page.wait_for_function("document.querySelector('#result-count').textContent === '60 open roles'")
 
     def tearDown(self):
-        self.page.close()
+        self.context.close()
+
+    def test_theme_defaults_to_system_and_tracks_changes(self):
+        self.assertEqual(self.page.locator("#theme-preference").input_value(), "system")
+        for mode in ["dark", "light"]:
+            self.page.emulate_media(color_scheme=mode)
+            self.page.wait_for_function("document.documentElement.dataset.theme === " + json.dumps(mode))
+            self.assertEqual(self.page.evaluate("getComputedStyle(document.documentElement).colorScheme"), mode)
+        self.assertIsNone(self.page.evaluate("localStorage.getItem('job-notif-theme')"))
+
+    def test_explicit_theme_persists_and_system_can_be_restored(self):
+        self.page.emulate_media(color_scheme="light")
+        self.page.select_option("#theme-preference", "dark")
+        self.page.reload()
+        self.assertEqual(self.page.locator("#theme-preference").input_value(), "dark")
+        self.assertEqual(self.page.locator("html").get_attribute("data-theme"), "dark")
+        self.page.emulate_media(color_scheme="dark")
+        self.page.select_option("#theme-preference", "light")
+        self.page.reload()
+        self.assertEqual(self.page.locator("html").get_attribute("data-theme"), "light")
+        self.page.select_option("#theme-preference", "system")
+        self.assertEqual(self.page.locator("html").get_attribute("data-theme"), "dark")
+        self.assertEqual(self.page.evaluate("localStorage.getItem('job-notif-theme')"), "system")
+
+    def test_invalid_preference_and_unavailable_storage_are_safe(self):
+        self.page.emulate_media(color_scheme="dark")
+        self.page.evaluate("localStorage.setItem('job-notif-theme', 'invalid')")
+        self.page.reload()
+        self.assertEqual(self.page.locator("#theme-preference").input_value(), "system")
+        self.page.add_init_script("""Object.defineProperty(window, 'localStorage', {
+            get() { throw new DOMException('Storage blocked', 'SecurityError'); }
+        });""")
+        self.page.reload()
+        self.assertEqual(self.page.locator("html").get_attribute("data-theme"), "dark")
+        self.page.select_option("#theme-preference", "light")
+        self.assertEqual(self.page.locator("html").get_attribute("data-theme"), "light")
+        self.page.wait_for_function("document.querySelector('#result-count').textContent === '60 open roles'")
+
+    def test_theme_synchronizes_between_tabs(self):
+        other = self.page.context.new_page()
+        try:
+            other.goto("http://job-notif.test/")
+            self.page.select_option("#theme-preference", "dark")
+            other.wait_for_function("document.documentElement.dataset.theme === 'dark'")
+            self.assertEqual(other.locator("#theme-preference").input_value(), "dark")
+            self.page.evaluate("localStorage.clear()")
+            other.wait_for_function("document.querySelector('#theme-preference').value === 'system'")
+        finally:
+            other.close()
+
+    def test_theme_keyboard_mobile_layout_and_focus(self):
+        self.page.set_viewport_size({"width": 375, "height": 812})
+        self.page.locator("#theme-preference").focus()
+        self.page.keyboard.press("End")
+        self.page.keyboard.press("Enter")
+        self.assertEqual(self.page.locator("html").get_attribute("data-theme"), "dark")
+        self.assertEqual(self.page.locator("#theme-preference").evaluate("el => getComputedStyle(el).outlineStyle"), "solid")
+        self.assertEqual(self.page.evaluate("document.documentElement.scrollWidth"), 375)
+        self.assertEqual(self.page.locator('meta[name="theme-color"]').get_attribute("content"), "#111827")
+        self.page.select_option("#role-filter", "sde-1")
+        self.page.wait_for_function("document.querySelector('#result-count').textContent === '60 open roles'")
+        self.assertEqual(self.page.locator("html").get_attribute("data-theme"), "dark")
+
+    def test_theme_text_contrast(self):
+        for theme in ["light", "dark"]:
+            self.page.select_option("#theme-preference", theme)
+            ratios = self.page.evaluate("""() => {
+                const luminance = color => {
+                    const channels = color.match(/[\\d.]+/g).slice(0, 3).map(Number).map(n => {
+                        n /= 255; return n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4;
+                    });
+                    return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+                };
+                return ['body', '.eyebrow', '.intro', '.count', '.filter-note', 'footer',
+                        '.filters label', '.filters select', '.role a', '.company', '.location',
+                        '.role-meta', 'th', '.refresh', '.pagination select', '.theme-control select'].map(selector => {
+                    const el = document.querySelector(selector);
+                    const foreground = luminance(getComputedStyle(el).color);
+                    let parent = el;
+                    while (getComputedStyle(parent).backgroundColor === 'rgba(0, 0, 0, 0)') parent = parent.parentElement;
+                    const background = luminance(getComputedStyle(parent).backgroundColor);
+                    return [selector, (Math.max(foreground, background) + .05) / (Math.min(foreground, background) + .05)];
+                });
+            }""")
+            for selector, ratio in ratios:
+                self.assertGreaterEqual(ratio, 4.5, f"{theme} {selector} contrast: {ratio}")
 
     def test_ignores_stale_response_even_when_fetch_ignores_abort(self):
         self.page.evaluate("""() => {

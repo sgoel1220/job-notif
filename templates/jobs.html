@@ -3,57 +3,108 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f6f5f1">
+  <meta name="theme-color" content="#ffffff">
+  <script>
+    // Resolve before paint; storage may be unavailable in privacy-restricted browsers.
+    (() => {
+      const key = "job-notif-theme";
+      const system = window.matchMedia("(prefers-color-scheme: dark)");
+      let preference = "system";
+      try { preference = localStorage.getItem(key) || "system"; } catch {}
+      if (!["system", "light", "dark"].includes(preference)) preference = "system";
+      const apply = () => {
+        const dark = preference === "dark" || (preference === "system" && system.matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        document.querySelector('meta[name="theme-color"]').content = dark ? "#111827" : "#ffffff";
+      };
+      apply();
+      system.addEventListener("change", apply);
+      document.addEventListener("DOMContentLoaded", () => {
+        const control = document.querySelector("#theme-preference");
+        control.value = preference;
+        control.addEventListener("change", () => {
+          preference = control.value;
+          try { localStorage.setItem(key, preference); } catch {}
+          apply();
+        });
+        window.addEventListener("storage", event => {
+          if (event.key !== key && event.key !== null) return;
+          preference = ["light", "dark"].includes(event.newValue) ? event.newValue : "system";
+          control.value = preference;
+          apply();
+        });
+      });
+    })();
+  </script>
   <title>Remote roles — Jobboard</title>
   <style>
+    :root {
+      color-scheme: light;
+      --page: #ffffff; --text: #222222; --surface: #f5f5f5; --panel: #f9f9f9;
+      --stripe: #fafafa; --border: #b8b8b8; --divider: #dddddd;
+      --muted: #595959; --secondary: #444444; --button-text: #333333;
+      --hover: #e6e6e6; --link: #24649b; --link-hover: #194b76; --focus: #24649b;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page: #111827; --text: #f3f4f6; --surface: #1f2937; --panel: #182233;
+      --stripe: #162031; --border: #64748b; --divider: #374151;
+      --muted: #b9c4d3; --secondary: #d1d9e5; --button-text: #e5e7eb;
+      --hover: #334155; --link: #93c5fd; --link-hover: #bfdbfe; --focus: #93c5fd;
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; background: #fff; color: #222; font: 14px/1.45 Arial, Helvetica, sans-serif; }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+    input[type="checkbox"] { accent-color: var(--link); }
+    .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .theme-control { display: flex; align-items: center; gap: 8px; color: var(--secondary); font-size: 12px; }
+    .theme-control select { min-height: 36px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--page); color: var(--text); font: inherit; }
+    body { margin: 0; background: var(--page); color: var(--text); font: 14px/1.45 Arial, Helvetica, sans-serif; }
     .wrap { width: 94%; max-width: 1200px; margin: 0 auto; }
-    header { padding: 12px 0; border-bottom: 1px solid #ccc; background: #f5f5f5; }
+    header { padding: 12px 0; border-bottom: 1px solid var(--border); background: var(--surface); }
     .brand { font-size: 16px; font-weight: bold; }
-    .mark { margin-right: 6px; color: #337ab7; }
+    .mark { margin-right: 6px; color: var(--link); }
     main { padding: 28px 0 50px; }
-    .eyebrow { color: #777; font-size: 12px; text-transform: uppercase; }
+    .eyebrow { color: var(--muted); font-size: 12px; text-transform: uppercase; }
     h1 { margin: 8px 0; font-size: 30px; }
-    .intro { margin: 0; color: #666; }
+    .intro { margin: 0; color: var(--muted); }
     .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0 12px; }
-    .count { color: #666; }
-    .refresh,.filter-actions button,.saved-filters button { padding: 6px 10px; border: 1px solid #ccc; border-radius: 3px; background: #f5f5f5; color: #333; font: inherit; cursor: pointer; }
-    .refresh:hover,.filter-actions button:hover,.saved-filters button:hover { background: #e6e6e6; }
-    .filters { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 16px 0 12px; padding: 14px; border: 1px solid #ccc; background: #f9f9f9; }
-    .filters label { display: grid; align-content: start; gap: 4px; color: #444; font-size: 12px; font-weight: bold; }
-    .filters input,.filters select { width: 100%; min-height: 32px; padding: 5px 7px; border: 1px solid #ccc; border-radius: 3px; background: #fff; color: #222; font: inherit; }
+    .count { color: var(--muted); }
+    .refresh,.filter-actions button,.saved-filters button { padding: 6px 10px; border: 1px solid var(--border); border-radius: 3px; background: var(--surface); color: var(--button-text); font: inherit; cursor: pointer; }
+    .refresh:hover,.filter-actions button:hover,.saved-filters button:hover { background: var(--hover); }
+    .filters { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 16px 0 12px; padding: 14px; border: 1px solid var(--border); background: var(--panel); }
+    .filters label { display: grid; align-content: start; gap: 4px; color: var(--secondary); font-size: 12px; font-weight: bold; }
+    .filters input,.filters select { width: 100%; min-height: 32px; padding: 5px 7px; border: 1px solid var(--border); border-radius: 3px; background: var(--page); color: var(--text); font: inherit; }
     .salary-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .filter-actions { display: flex; align-items: end; gap: 6px; }
-    .filter-note { margin: 0 0 12px; color: #666; font-size: 12px; }
-    .filter-options { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 12px; color: #555; font-size: 12px; }
+    .filter-note { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+    .filter-options { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 12px; color: var(--muted); font-size: 12px; }
     .filter-options label { display: flex; align-items: center; gap: 5px; }
     .filter-options input { margin: 0; }
-    .saved-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; color: #555; }
+    .saved-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; color: var(--muted); }
     .saved-filters { display: flex; flex-wrap: wrap; gap: 5px; }
     .saved-filters button { padding: 4px 8px; }
     .saved-filters .remove { min-width: 26px; margin-left: 3px; }
-    .table-card { overflow: hidden; border: 1px solid #ccc; }
-    .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 14px 0; color: #555; }
-    .pagination button,.pagination select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 3px; background: #f5f5f5; color: #333; font: inherit; }
+    .table-card { overflow: hidden; border: 1px solid var(--border); }
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 14px 0; color: var(--muted); }
+    .pagination button,.pagination select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 3px; background: var(--surface); color: var(--button-text); font: inherit; }
     .pagination button:not(:disabled) { cursor: pointer; }
     .pagination button:disabled { opacity: .5; }
     .pagination label { display: flex; align-items: center; gap: 5px; }
     .table-scroll { overflow-x: auto; }
     table { width: 100%; min-width: 1000px; border-collapse: collapse; text-align: left; }
-    th { padding: 9px 10px; border-bottom: 2px solid #ddd; background: #f5f5f5; color: #333; font-size: 12px; }
-    td { padding: 10px; border-top: 1px solid #ddd; vertical-align: top; }
-    tbody tr:nth-child(even) { background: #fafafa; }
-    .role a { color: #337ab7; font-weight: bold; text-decoration: none; }
-    .role a:hover { color: #23527c; text-decoration: underline; }
-    .company { color: #444; }
-    .location { color: #555; }
-    .role-meta,.description { display: block; margin-top: 4px; color: #666; font-size: 12px; font-weight: normal; }
+    th { padding: 9px 10px; border-bottom: 2px solid var(--divider); background: var(--surface); color: var(--button-text); font-size: 12px; }
+    td { padding: 10px; border-top: 1px solid var(--divider); vertical-align: top; }
+    tbody tr:nth-child(even) { background: var(--stripe); }
+    .role a { color: var(--link); font-weight: bold; text-decoration: none; }
+    .role a:hover { color: var(--link-hover); text-decoration: underline; }
+    .company { color: var(--secondary); }
+    .location { color: var(--muted); }
+    .role-meta,.description { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; font-weight: normal; }
     .description { max-width: 440px; }
-    .badge { display: inline-block; padding: 2px 5px; border: 1px solid #ccc; border-radius: 3px; background: #f5f5f5; color: #333; font-size: 11px; white-space: nowrap; }
+    .badge { display: inline-block; padding: 2px 5px; border: 1px solid var(--border); border-radius: 3px; background: var(--surface); color: var(--button-text); font-size: 11px; white-space: nowrap; }
     .salary,.posted { white-space: nowrap; font-size: 13px; }
-    .empty { padding: 40px 15px; color: #666; text-align: center; }
-    footer { margin-top: 14px; color: #777; font-size: 12px; }
+    .empty { padding: 40px 15px; color: var(--muted); text-align: center; }
+    footer { margin-top: 14px; color: var(--muted); font-size: 12px; }
     @media(max-width:900px) { .filters { grid-template-columns: repeat(2,minmax(0,1fr)); } }
     @media(max-width:600px) {
       .wrap { width: 96%; } main { padding-top: 20px; }
@@ -64,7 +115,12 @@
   </style>
 </head>
 <body>
-  <header><div class="wrap brand"><span class="mark">↗</span> work, anywhere</div></header>
+  <header><div class="wrap header-row">
+    <div class="brand"><span class="mark">↗</span> work, anywhere</div>
+    <label class="theme-control" for="theme-preference">Theme
+      <select id="theme-preference"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+    </label>
+  </div></header>
   <main class="wrap">
     <div class="eyebrow">Curated opportunities</div>
     <h1>International remote jobs</h1>
